@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-1: #ffe4f1;
+  --bg-2: #d9f4ff;
+  --bg-3: #fff7d6;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-bubbly, "Comic Sans MS", "Quicksand", system-ui, sans-serif);
+  background: linear-gradient(135deg, var(--bg-1), var(--bg-2) 50%, var(--bg-3));
+  background-attachment: fixed;
+  color: #2b2350;
+}
+
+/* Hide YouTube chrome we can't fully suppress via params */
+iframe { border: 0; }

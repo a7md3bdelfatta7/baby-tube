@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: babytube
+      POSTGRES_PASSWORD: babytube
+      POSTGRES_DB: babytube
+    ports:
+      - "5432:5432"
+    volumes:
+      - babytube_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U babytube -d babytube"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: dev
+    command: sh -c "npm run db:push && npm run dev"
+    environment:
+      DATABASE_URL: postgres://babytube:babytube@db:5432/babytube
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-babygirl123}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  babytube_pgdata:
