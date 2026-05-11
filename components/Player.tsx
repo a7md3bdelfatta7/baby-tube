@@ -1,9 +1,12 @@
 "use client";
 
+import type { ReactElement } from "react";
 import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
 import { useEffect, useRef, useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { extractVideoId } from "@/lib/youtube";
 import { timerStore } from "@/lib/timer-store";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Props = {
   videoUrl: string;
@@ -12,7 +15,12 @@ type Props = {
   onEnded: () => void;
 };
 
-export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
+export function Player({
+  videoUrl,
+  startSeconds,
+  endSeconds,
+  onEnded,
+}: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const watchRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -29,13 +37,19 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
 
   if (!id) {
     return (
-      <div className="aspect-video rounded-3xl bg-pink-100 grid place-items-center text-pink-700">
-        Couldn&apos;t read this video link 😿
+      <div className="grid aspect-video place-items-center rounded-2xl border border-dashed border-border bg-muted/80 px-6 text-center shadow-inner">
+        <Alert variant="default" className="max-w-md border-border shadow-md">
+          <AlertCircle className="size-5 text-muted-foreground" />
+          <AlertTitle>Invalid link</AlertTitle>
+          <AlertDescription>
+            Couldn&apos;t read this video URL. Try another link from Admin.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  const startEnforced = () => {
+  const startEnforced = (): void => {
     if (watchRef.current) clearInterval(watchRef.current);
     if (!endSeconds) return;
     watchRef.current = setInterval(() => {
@@ -49,28 +63,32 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
             onEnded();
           }
         }
-      } catch {}
+      } catch {
+        /* player API may throw while tearing down */
+      }
     }, 500);
   };
 
-  const handleReady = (e: YouTubeEvent) => {
+  const handleReady = (e: YouTubeEvent): void => {
     playerRef.current = e.target;
     try {
       e.target.unMute();
       e.target.setVolume(80);
       e.target.playVideo();
-    } catch {}
+    } catch {
+      /* autoplay policies */
+    }
   };
 
-  const handleStateChange = (e: YouTubeEvent) => {
-    // 1 = playing, 2 = paused, 0 = ended, 3 = buffering
+  const handleStateChange = (e: YouTubeEvent): void => {
     const s = e.data;
     if (s === 1) {
       timerStore.setPlaying(true);
-      // ensure unmuted on first play
       try {
         e.target.unMute();
-      } catch {}
+      } catch {
+        /* ignore */
+      }
       startEnforced();
     } else if (s === 2 || s === 0) {
       timerStore.setPlaying(false);
@@ -81,8 +99,8 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
     }
   };
 
-  const handleError = () => {
-    setError("Couldn't play this one 😿 — skipping...");
+  const handleError = (): void => {
+    setError("Couldn't play this one — skipping to the next video…");
     setTimeout(() => {
       if (!endedRef.current) {
         endedRef.current = true;
@@ -92,7 +110,7 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
   };
 
   return (
-    <div className="relative aspect-video w-full rounded-3xl overflow-hidden shadow-xl border-4 border-white">
+    <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-inner ring-1 ring-black/10">
       <YouTube
         videoId={id}
         opts={{
@@ -100,7 +118,7 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
           height: "100%",
           playerVars: {
             autoplay: 1,
-            mute: 1, // browsers require mute to autoplay; we unmute on ready
+            mute: 1,
             controls: 0,
             rel: 0,
             modestbranding: 1,
@@ -112,8 +130,8 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
             end: endSeconds ?? undefined,
           },
         }}
-        className="w-full h-full"
-        iframeClassName="w-full h-full"
+        className="h-full w-full"
+        iframeClassName="h-full w-full"
         onReady={handleReady}
         onStateChange={handleStateChange}
         onError={handleError}
@@ -124,11 +142,11 @@ export function Player({ videoUrl, startSeconds, endSeconds, onEnded }: Props) {
           }
         }}
       />
-      {error && (
-        <div className="absolute inset-0 grid place-items-center bg-pink-50/95 text-pink-700 font-bold">
-          {error}
+      {error ? (
+        <div className="absolute inset-0 grid place-items-center bg-background/95 p-6 text-center backdrop-blur-sm">
+          <p className="max-w-sm text-sm font-medium text-destructive">{error}</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

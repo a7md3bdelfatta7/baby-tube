@@ -1,19 +1,31 @@
 "use client";
 
+import type { ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useMemo } from "react";
+import { ArrowLeft, SkipForward } from "lucide-react";
 import { Player } from "@/components/Player";
 import { listVideos } from "@/lib/api";
 import { useWatchTimer } from "@/lib/timer-store";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 export default function WatchPage({
   params,
 }: {
   params: Promise<{ id: string }>;
-}) {
+}): ReactElement {
   const { id } = use(params);
   const router = useRouter();
   const { expired } = useWatchTimer();
@@ -24,7 +36,9 @@ export default function WatchPage({
   });
 
   const { current, next, prev, isLast } = useMemo(() => {
-    if (!videos) return { current: null, next: null, prev: null, isLast: false };
+    if (!videos) {
+      return { current: null, next: null, prev: null, isLast: false };
+    }
     const idx = videos.findIndex((v) => String(v.id) === String(id));
     return {
       current: idx >= 0 ? videos[idx] : null,
@@ -34,74 +48,91 @@ export default function WatchPage({
     };
   }, [videos, id]);
 
-  const goNext = () => {
+  const goNext = (): void => {
     if (next) router.push(`/watch/${next.id}`);
     else router.push("/");
   };
 
   if (!videos) {
     return (
-      <main className="max-w-4xl mx-auto px-4 pt-6 text-center text-purple-500 text-xl">
-        Loading… 🎀
+      <main className="mx-auto max-w-4xl px-4 pb-16 pt-8 md:pt-10">
+        <div className="space-y-5">
+          <Skeleton className="h-11 w-44 rounded-xl" />
+          <Skeleton className="aspect-video w-full rounded-2xl shadow-inner" />
+          <Skeleton className="h-9 w-2/3 rounded-lg" />
+        </div>
       </main>
     );
   }
+
   if (!current) {
     return (
-      <main className="max-w-4xl mx-auto px-4 pt-6 text-center">
-        <p className="text-purple-500 text-xl">Video not found 😿</p>
-        <Link href="/" className="text-pink-500 underline">
-          Back home
-        </Link>
+      <main className="mx-auto max-w-4xl px-4 pb-16 pt-8 text-center md:pt-10">
+        <Card className="mx-auto max-w-md rounded-2xl border-border/80 shadow-xl shadow-black/[0.06]">
+          <CardHeader>
+            <CardTitle>Video not found</CardTitle>
+            <CardDescription>
+              This video may have been removed from the list.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button render={<Link href="/" />} variant="default" size="lg">
+              Back home
+            </Button>
+          </CardContent>
+        </Card>
       </main>
     );
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <Link
-          href="/"
-          className="bg-white/80 hover:bg-white rounded-full px-4 py-2 font-bold text-pink-600 border-2 border-pink-200 shadow"
-        >
-          ← Home
-        </Link>
-        <button
-          onClick={goNext}
-          className="bg-purple-500 hover:bg-purple-600 text-white rounded-full px-4 py-2 font-bold shadow"
-        >
-          Skip ⏭
-        </button>
+    <main className="mx-auto max-w-4xl px-4 pb-16 pt-6 md:pt-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/70 px-3 py-2 shadow-sm backdrop-blur-md md:px-4">
+        <Button render={<Link href="/" />} variant="outline" size="default">
+          <ArrowLeft className="size-4" data-icon="inline-start" />
+          Home
+        </Button>
+        <Button type="button" onClick={goNext} size="default">
+          Skip
+          <SkipForward className="size-4" data-icon="inline-end" />
+        </Button>
       </div>
 
-      {expired ? (
-        <div className="aspect-video rounded-3xl bg-white/80 grid place-items-center text-center p-6 border-4 border-pink-200">
-          <div>
-            <div className="text-6xl mb-2">💤</div>
-            <div className="text-2xl font-bold text-pink-600">Time&apos;s up!</div>
-            <p className="text-purple-500 mt-1">
-              Hit the Reset button below for more videos.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <Player
-          key={current.id}
-          videoUrl={current.videoUrl}
-          startSeconds={current.startSeconds}
-          endSeconds={current.endSeconds}
-          onEnded={goNext}
-        />
-      )}
+      <div className="overflow-hidden rounded-[1.35rem] border border-border/80 bg-card/40 p-2 shadow-[0_32px_64px_-16px_oklch(0.25_0.08_290/0.25)] ring-1 ring-black/[0.04] backdrop-blur-[2px] md:p-3">
+        {expired ? (
+          <Card className="aspect-video place-content-center rounded-2xl border-dashed border-primary/30 bg-muted/40 shadow-none">
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <span className="text-6xl leading-none" aria-hidden>
+                💤
+              </span>
+              <CardTitle className="text-2xl font-semibold">Time&apos;s up</CardTitle>
+              <CardDescription className="max-w-xs text-base">
+                Hit Reset on the timer below when it&apos;s time for more shows.
+              </CardDescription>
+            </CardContent>
+          </Card>
+        ) : (
+          <Player
+            key={current.id}
+            videoUrl={current.videoUrl}
+            startSeconds={current.startSeconds}
+            endSeconds={current.endSeconds}
+            onEnded={goNext}
+          />
+        )}
+      </div>
 
-      <h2 className="text-2xl font-extrabold text-purple-700 mt-4">
-        {current.title}
-      </h2>
+      <div className="mt-8 space-y-3">
+        <h2 className="text-balance text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+          {current.title}
+        </h2>
+        <Separator className="bg-border/80" />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-        {next && <UpNextCard label="Up Next" video={next} />}
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        {next && <UpNextCard label="Up next" video={next} />}
         {!next && isLast && prev && (
-          <UpNextCard label="Try this one again" video={prev} />
+          <UpNextCard label="Watch again" video={prev} />
         )}
       </div>
     </main>
@@ -113,27 +144,39 @@ function UpNextCard({
   video,
 }: {
   label: string;
-  video: { id: number; title: string; videoUrl: string; thumbnailUrl: string | null };
-}) {
+  video: {
+    id: number;
+    title: string;
+    videoUrl: string;
+    thumbnailUrl: string | null;
+  };
+}): ReactElement {
   const ytId = extractVideoId(video.videoUrl);
   const thumb = video.thumbnailUrl ?? (ytId ? thumbnailFor(ytId) : null);
   return (
-    <Link
-      href={`/watch/${video.id}`}
-      className="flex gap-3 bg-white rounded-2xl shadow border-4 border-white hover:border-pink-300 p-2"
-    >
-      <div className="w-32 h-20 bg-pink-100 rounded-xl overflow-hidden flex-shrink-0">
-        {thumb && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={thumb} alt={video.title} className="w-full h-full object-cover" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs text-pink-500 font-bold">{label}</div>
-        <div className="font-bold text-purple-700 line-clamp-2 text-sm">
-          {video.title}
-        </div>
-      </div>
+    <Link href={`/watch/${video.id}`} className="block rounded-2xl outline-none">
+      <Card className="gap-0 overflow-hidden rounded-2xl border-border/70 py-0 shadow-md transition-all hover:border-primary/35 hover:shadow-lg">
+        <CardContent className="flex gap-4 p-4">
+          <div className="relative h-[5.25rem] w-[8.5rem] shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-black/[0.06]">
+            {thumb ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={thumb}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : null}
+          </div>
+          <div className="min-w-0 flex-1 py-0.5">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-primary">
+              {label}
+            </p>
+            <p className="mt-1 line-clamp-2 font-semibold leading-snug text-foreground">
+              {video.title}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }
