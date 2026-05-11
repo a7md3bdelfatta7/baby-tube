@@ -26,9 +26,11 @@ export function Player({
   const watchRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockClicks, setBlockClicks] = useState(false);
 
   useEffect(() => {
     endedRef.current = false;
+    setBlockClicks(false);
     return () => {
       if (watchRef.current) clearInterval(watchRef.current);
       timerStore.setPlaying(false);
@@ -51,17 +53,25 @@ export function Player({
 
   const startEnforced = (): void => {
     if (watchRef.current) clearInterval(watchRef.current);
-    if (!endSeconds) return;
     watchRef.current = setInterval(() => {
       const p = playerRef.current;
       if (!p) return;
       try {
         const t = p.getCurrentTime?.();
-        if (typeof t === "number" && t >= endSeconds) {
+        const d = p.getDuration?.();
+        if (typeof t === "number" && endSeconds && t >= endSeconds) {
           if (!endedRef.current) {
             endedRef.current = true;
             onEnded();
           }
+          return;
+        }
+        // Block clicks during the last 20s, when YouTube overlays end-screen
+        // recommendation thumbnails on top of the video.
+        if (typeof t === "number" && typeof d === "number" && d > 0) {
+          const stopAt = endSeconds && endSeconds < d ? endSeconds : d;
+          const remaining = stopAt - t;
+          setBlockClicks(remaining > 0 && remaining <= 20);
         }
       } catch {
         /* player API may throw while tearing down */
@@ -92,9 +102,12 @@ export function Player({
       startEnforced();
     } else if (s === 2 || s === 0) {
       timerStore.setPlaying(false);
-      if (s === 0 && !endedRef.current) {
-        endedRef.current = true;
-        onEnded();
+      if (s === 0) {
+        setBlockClicks(true);
+        if (!endedRef.current) {
+          endedRef.current = true;
+          onEnded();
+        }
       }
     }
   };
@@ -142,8 +155,9 @@ export function Player({
           }
         }}
       />
-      {/* Transparent overlay blocks YouTube's end-screen recommendation clicks */}
-      <div className="absolute inset-0" aria-hidden="true" />
+      {blockClicks ? (
+        <div className="absolute inset-0" aria-hidden="true" />
+      ) : null}
       {error ? (
         <div className="absolute inset-0 grid place-items-center bg-background/95 p-6 text-center backdrop-blur-sm">
           <p className="max-w-sm text-sm font-medium text-destructive">{error}</p>
