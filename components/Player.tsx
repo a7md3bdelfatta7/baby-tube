@@ -142,6 +142,8 @@ export function Player({
           }
         }}
       />
+      {/* Transparent overlay blocks YouTube's end-screen recommendation clicks */}
+      <div className="absolute inset-0" aria-hidden="true" />
       {error ? (
         <div className="absolute inset-0 grid place-items-center bg-background/95 p-6 text-center backdrop-blur-sm">
           <p className="max-w-sm text-sm font-medium text-destructive">{error}</p>
