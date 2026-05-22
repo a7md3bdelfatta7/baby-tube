@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="512" height="512" role="img" aria-label="Tots icon">
+  <title>Tots — baby video streaming app icon</title>
+  <!-- Background squircle (mint) -->
+  <rect x="6" y="6" width="188" height="188" rx="50" fill="#C8EFD4"/>
+  <!-- Ears -->
+  <circle cx="60" cy="58" r="22" fill="#CF9A77"/>
+  <circle cx="140" cy="58" r="22" fill="#CF9A77"/>
+  <circle cx="60" cy="58" r="10" fill="#FFD0DC"/>
+  <circle cx="140" cy="58" r="10" fill="#FFD0DC"/>
+  <!-- Head -->
+  <circle cx="100" cy="112" r="62" fill="#E8B98F"/>
+  <!-- Muzzle -->
+  <ellipse cx="100" cy="132" rx="30" ry="20" fill="#FBF7EF"/>
+  <!-- Eyes -->
+  <circle cx="78" cy="102" r="5.5" fill="#3D3D5C"/>
+  <circle cx="122" cy="102" r="5.5" fill="#3D3D5C"/>
+  <circle cx="80" cy="100" r="1.6" fill="#FBF7EF"/>
+  <circle cx="124" cy="100" r="1.6" fill="#FBF7EF"/>
+  <!-- Nose: play-button shape -->
+  <path d="M94 124L111 130Q115 131.5 111 133L94 139Q89 139.5 89 135.5L89 127.5Q89 123.5 94 124Z" fill="#3D3D5C"/>
+  <!-- Cheeks -->
+  <ellipse cx="60" cy="130" rx="9" ry="5" fill="#FFB5C5" opacity="0.75"/>
+  <ellipse cx="140" cy="130" rx="9" ry="5" fill="#FFB5C5" opacity="0.75"/>
+</svg>

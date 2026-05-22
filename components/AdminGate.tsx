@@ -6,13 +6,6 @@ import Link from "next/link";
 import { ArrowLeft, House, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 const KEY = "babytube.admin.pw";
@@ -56,17 +49,23 @@ export function AdminGate({
 
   if (!password) {
     return (
-      <Card className="mx-auto mt-10 max-w-md overflow-hidden rounded-2xl border-border/70 bg-card/95 shadow-2xl shadow-black/10 ring-1 ring-black/[0.04] backdrop-blur-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary/10 shadow-inner ring-1 ring-primary/15">
-            <Lock className="size-7 text-primary" aria-hidden />
+      <div className="mx-auto mt-6 max-w-md overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.4)] ring-1 ring-black/[0.04] backdrop-blur-xl">
+        <div className="px-6 pt-8 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/tots-brand-kit/svg/tots-icon.svg"
+            alt="Tots"
+            className="mx-auto mb-3 size-20 rounded-2xl shadow-md"
+          />
+          <div className="mx-auto -mt-7 mb-3 flex size-8 items-center justify-center rounded-full bg-[color:var(--tots-ink)] text-[color:var(--tots-cream)] shadow-lg ring-4 ring-white">
+            <Lock className="size-4" aria-hidden />
           </div>
-          <CardTitle>Admin sign-in</CardTitle>
-          <CardDescription>
-            Enter the admin password to manage videos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          <h2 className="font-display text-2xl font-bold">Parents only</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter the password to manage videos.
+          </p>
+        </div>
+        <div className="px-6 pb-8 pt-6">
           <form
             className="space-y-4"
             onSubmit={async (e) => {
@@ -90,13 +89,18 @@ export function AdminGate({
               placeholder="Password"
               autoComplete="current-password"
               aria-invalid={error ? true : undefined}
+              className="h-12 rounded-2xl bg-white/80 px-4 text-base"
             />
             {error ? (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="rounded-2xl">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             ) : null}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="h-12 w-full rounded-2xl bg-[color:var(--tots-ink)] text-base font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 hover:brightness-110"
+              disabled={loading}
+            >
               {loading ? "Checking…" : "Unlock"}
             </Button>
           </form>
@@ -104,24 +108,35 @@ export function AdminGate({
             render={<Link href="/" />}
             variant="ghost"
             size="sm"
-            className="mt-6 w-full gap-2 text-muted-foreground"
+            className="mt-5 w-full gap-2 rounded-full text-muted-foreground"
           >
             <ArrowLeft className="size-4" data-icon="inline-start" />
             Back to Baby Tube
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Button render={<Link href="/" />} variant="outline" size="sm">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <Button
+          render={<Link href="/" />}
+          variant="outline"
+          size="sm"
+          className="rounded-full bg-white/80"
+        >
           <House className="size-3.5" data-icon="inline-start" />
           Home
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={clear}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={clear}
+          className="rounded-full bg-white/80"
+        >
           <Lock className="size-3.5" data-icon="inline-start" />
           Lock
         </Button>

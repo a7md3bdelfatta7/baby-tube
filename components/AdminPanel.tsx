@@ -12,7 +12,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  Upload,
 } from "lucide-react";
 import {
   createVideo,
@@ -49,7 +48,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type Tab = "list" | "settings" | "single" | "multi" | "playlist";
+type Tab = "list" | "settings" | "add" | "playlist";
 
 export function AdminPanel(): ReactElement {
   const [tab, setTab] = useState<Tab>("list");
@@ -61,27 +60,32 @@ export function AdminPanel(): ReactElement {
       className="flex flex-col gap-8"
     >
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <TabsList className="flex h-auto min-h-11 w-full flex-wrap justify-start gap-1 rounded-2xl border border-border/60 bg-muted/70 p-1.5 shadow-inner sm:max-w-none md:flex-1">
-          <TabsTrigger value="list" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
+        <TabsList className="flex h-auto min-h-12 w-full flex-wrap justify-start gap-1.5 rounded-[1.5rem] border border-white/60 bg-white/70 p-2 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md sm:max-w-none md:flex-1">
+          <TabsTrigger
+            value="list"
+            className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
+          >
             <ListVideo className="size-4" />
-            Video list
+            Library
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="gap-1.5 rounded-xl data-[active]:shadow-sm"
+            className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
           >
             <AlarmClock className="size-4" />
             Settings
           </TabsTrigger>
-          <TabsTrigger value="single" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
+          <TabsTrigger
+            value="add"
+            className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
+          >
             <Plus className="size-4" />
-            Single
+            Add videos
           </TabsTrigger>
-          <TabsTrigger value="multi" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
-            <Upload className="size-4" />
-            Multi
-          </TabsTrigger>
-          <TabsTrigger value="playlist" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
+          <TabsTrigger
+            value="playlist"
+            className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
+          >
             <ListMusic className="size-4" />
             Playlist
           </TabsTrigger>
@@ -90,7 +94,7 @@ export function AdminPanel(): ReactElement {
           render={<Link href="/" />}
           variant="outline"
           size="default"
-          className="shrink-0 gap-2 sm:self-center"
+          className="shrink-0 gap-2 rounded-full bg-white/80 sm:self-center"
         >
           <House className="size-4" data-icon="inline-start" />
           Home
@@ -103,11 +107,8 @@ export function AdminPanel(): ReactElement {
       <TabsContent value="settings" className="mt-0 outline-none">
         <SettingsPanel />
       </TabsContent>
-      <TabsContent value="single" className="mt-0 outline-none">
-        <SingleUpload />
-      </TabsContent>
-      <TabsContent value="multi" className="mt-0 outline-none">
-        <MultiUpload />
+      <TabsContent value="add" className="mt-0 outline-none">
+        <AddVideos />
       </TabsContent>
       <TabsContent value="playlist" className="mt-0 outline-none">
         <PlaylistImport />
@@ -137,7 +138,7 @@ function VideoList(): ReactElement {
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+      <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
         <CardContent className="py-10 text-center text-muted-foreground">
           Loading…
         </CardContent>
@@ -147,7 +148,7 @@ function VideoList(): ReactElement {
 
   return (
     <>
-      <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+      <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
           <CardTitle>Videos</CardTitle>
           <Badge variant="secondary">{data?.length ?? 0} total</Badge>
@@ -262,7 +263,7 @@ function SettingsPanel(): ReactElement {
   });
 
   return (
-    <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+    <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
       <CardHeader>
         <CardTitle>Screen time</CardTitle>
         <CardDescription>
@@ -446,54 +447,15 @@ function FormFields({
   );
 }
 
-function SingleUpload(): ReactElement {
-  const qc = useQueryClient();
-  const [s, setS] = useState<FormState>(blank);
-  const m = useMutation({
-    mutationFn: () => createVideo(toPayload(s)),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["videos"] });
-      setS(blank);
-    },
-  });
-  return (
-    <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
-      <CardHeader>
-        <CardTitle>Add a video</CardTitle>
-        <CardDescription>
-          Paste a title and YouTube link. Optional clip times trim the segment.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <FormFields s={s} setS={setS} />
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            onClick={() => m.mutate()}
-            disabled={!s.title || !s.videoUrl || m.isPending}
-          >
-            {m.isPending ? "Saving…" : "Save video"}
-          </Button>
-        </div>
-        {m.isError ? (
-          <p className="text-sm text-destructive">Save failed.</p>
-        ) : null}
-        {m.isSuccess ? (
-          <p className="text-sm text-emerald-600">Saved successfully.</p>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
 type Row = FormState & {
   status: "idle" | "uploading" | "saved" | "error";
   error?: string;
 };
 
-function MultiUpload(): ReactElement {
+function AddVideos(): ReactElement {
   const qc = useQueryClient();
   const [rows, setRows] = useState<Row[]>([{ ...blank, status: "idle" }]);
+  const [submitting, setSubmitting] = useState(false);
 
   const updateRow = (i: number, patch: Partial<Row>): void =>
     setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -501,13 +463,21 @@ function MultiUpload(): ReactElement {
   const addRow = (): void =>
     setRows((rs) => [...rs, { ...blank, status: "idle" }]);
   const removeRow = (i: number): void =>
-    setRows((rs) => rs.filter((_, idx) => idx !== i));
+    setRows((rs) =>
+      rs.length === 1 ? [{ ...blank, status: "idle" }] : rs.filter((_, idx) => idx !== i),
+    );
+
+  const validRowCount = rows.filter(
+    (r) => r.status !== "saved" && r.title.trim() && r.videoUrl.trim(),
+  ).length;
+  const canSubmit = !submitting && validRowCount > 0;
 
   const submitAll = async (): Promise<void> => {
+    setSubmitting(true);
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       if (r.status === "saved") continue;
-      if (!r.title || !r.videoUrl) continue;
+      if (!r.title.trim() || !r.videoUrl.trim()) continue;
       updateRow(i, { status: "uploading", error: undefined });
       try {
         await createVideo(toPayload(r));
@@ -518,6 +488,7 @@ function MultiUpload(): ReactElement {
       }
     }
     qc.invalidateQueries({ queryKey: ["videos"] });
+    setSubmitting(false);
     setTimeout(() => {
       setRows((rs) => {
         const remaining = rs.filter((r) => r.status !== "saved");
@@ -526,12 +497,21 @@ function MultiUpload(): ReactElement {
     }, 600);
   };
 
+  const saveLabel =
+    submitting
+      ? "Saving…"
+      : validRowCount > 1
+        ? `Save ${validRowCount} videos`
+        : "Save video";
+
   return (
-    <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+    <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
       <CardHeader>
-        <CardTitle>Multi upload</CardTitle>
+        <CardTitle>Add videos</CardTitle>
         <CardDescription>
-          Add several rows, then save all in one go.
+          Paste a title and YouTube link. Optional clip times trim the segment.
+          Use <span className="font-medium text-foreground">Add another</span> to
+          queue more at once.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -540,42 +520,67 @@ function MultiUpload(): ReactElement {
             <Card
               key={i}
               className={cn(
-                "shadow-none",
-                r.status === "saved" && "border-emerald-500/40 bg-emerald-50/50",
-                r.status === "error" && "border-destructive/50 bg-destructive/5",
-                r.status === "uploading" && "border-amber-500/40 bg-amber-50/50",
+                "rounded-2xl shadow-none ring-1 ring-black/[0.04]",
+                r.status === "saved" &&
+                  "border-emerald-500/40 bg-emerald-50/60",
+                r.status === "error" &&
+                  "border-destructive/50 bg-destructive/5",
+                r.status === "uploading" &&
+                  "border-amber-500/40 bg-amber-50/60",
               )}
             >
               <CardContent className="space-y-3 pt-6">
-                <FormFields s={r} setS={(next) => updateRow(i, next)} />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {r.status === "saved" && "Saved"}
-                    {r.status === "uploading" && "Uploading…"}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Video {i + 1}
+                  </span>
+                  <span className="text-sm">
+                    {r.status === "saved" && (
+                      <span className="text-emerald-600">Saved</span>
+                    )}
+                    {r.status === "uploading" && (
+                      <span className="text-amber-600">Uploading…</span>
+                    )}
                     {r.status === "error" && (
                       <span className="text-destructive">{r.error}</span>
                     )}
                   </span>
+                </div>
+                <FormFields s={r} setS={(next) => updateRow(i, next)} />
+                <div className="flex justify-end">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:bg-destructive/10"
                     onClick={() => removeRow(i)}
+                    disabled={rows.length === 1 && !r.title && !r.videoUrl}
                   >
-                    Remove row
+                    <Trash2 className="size-3.5" data-icon="inline-start" />
+                    {rows.length === 1 ? "Clear" : "Remove"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-        <div className="flex flex-wrap justify-between gap-3">
-          <Button type="button" variant="secondary" onClick={addRow}>
-            Add another row
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addRow}
+            className="rounded-full"
+          >
+            <Plus className="size-4" data-icon="inline-start" />
+            Add another
           </Button>
-          <Button type="button" onClick={() => void submitAll()}>
-            Save all
+          <Button
+            type="button"
+            onClick={() => void submitAll()}
+            disabled={!canSubmit}
+            className="rounded-full"
+          >
+            {saveLabel}
           </Button>
         </div>
       </CardContent>
@@ -593,7 +598,7 @@ function PlaylistImport(): ReactElement {
     },
   });
   return (
-    <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+    <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
       <CardHeader>
         <CardTitle>Import a playlist</CardTitle>
         <CardDescription>

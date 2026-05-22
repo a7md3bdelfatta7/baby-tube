@@ -1,0 +1,43 @@
+/* Tots — color tokens
+ * Drop into your project and reference via CSS custom properties.
+ */
+
+:root {
+  /* Primary brand */
+  --tots-mint:        #C8EFD4;  /* primary surface */
+  --tots-bear:        #E8B98F;  /* character body */
+  --tots-bear-shadow: #CF9A77;  /* ears, depth */
+  --tots-pink:        #FFD0DC;  /* inner ears */
+  --tots-cheek:       #FFB5C5;  /* blush accent */
+  --tots-cream:       #FBF7EF;  /* light surface, muzzle */
+  --tots-ink:         #3D3D5C;  /* text, eyes, nose */
+
+  /* Pastel palette extension */
+  --tots-sky:         #A8D5F2;  /* secondary surface */
+  --tots-sunshine:    #FFE9A8;  /* accent */
+  --tots-peach:       #FFD4BA;  /* accent */
+  --tots-lavender:    #D8C7F0;  /* accent */
+
+  /* Semantic surface tokens */
+  --tots-bg-light:    #FBF7EF;  /* default app background */
+  --tots-bg-dark:     #1F1F2E;  /* dark mode background */
+  --tots-text:        #3D3D5C;  /* default text */
+  --tots-text-soft:   #6B6B8A;  /* secondary text */
+
+  /* Gradient presets */
+  --tots-grad-mint-sunshine: linear-gradient(135deg, #C8EFD4 0%, #FFE9A8 100%);
+  --tots-grad-sky-lavender:  linear-gradient(135deg, #A8D5F2 0%, #D8C7F0 100%);
+  --tots-grad-peach-pink:    linear-gradient(135deg, #FFD4BA 0%, #FFD0DC 100%);
+
+  /* Rounded type stack — use for headings & wordmark */
+  --tots-font-rounded: Quicksand, ui-rounded, "SF Pro Rounded", "Nunito",
+                       "Hiragino Maru Gothic ProN", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tots-bg-light: #1F1F2E;
+    --tots-bg-dark:  #FBF7EF;
+    --tots-text:     #FBF7EF;
+  }
+}
