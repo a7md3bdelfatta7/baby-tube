@@ -7,39 +7,54 @@ const STORAGE_KEY = "babytube.timer.v1";
 
 type State = {
   remaining: number;
+  totalSeconds: number;
   isPlaying: boolean;
   expired: boolean;
 };
 
-let state: State = { remaining: TOTAL_SECONDS, isPlaying: false, expired: false };
+let state: State = {
+  remaining: TOTAL_SECONDS,
+  totalSeconds: TOTAL_SECONDS,
+  isPlaying: false,
+  expired: false,
+};
 const listeners = new Set<() => void>();
 let interval: ReturnType<typeof setInterval> | null = null;
 let initialized = false;
 
-function notify() {
+function notify(): void {
   for (const l of listeners) l();
 }
 
-function persist() {
+function persist(): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ remaining: state.remaining, expired: state.expired }),
+      JSON.stringify({
+        remaining: state.remaining,
+        totalSeconds: state.totalSeconds,
+        expired: state.expired,
+      }),
     );
   } catch {}
 }
 
-function ensureInit() {
+function ensureInit(): void {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const totalSeconds =
+        typeof parsed.totalSeconds === "number"
+          ? Math.max(60, parsed.totalSeconds)
+          : TOTAL_SECONDS;
       if (typeof parsed.remaining === "number") {
         state = {
-          remaining: Math.max(0, parsed.remaining),
+          remaining: Math.min(totalSeconds, Math.max(0, parsed.remaining)),
+          totalSeconds,
           isPlaying: false,
           expired: !!parsed.expired || parsed.remaining <= 0,
         };
@@ -48,11 +63,11 @@ function ensureInit() {
   } catch {}
 }
 
-function tick() {
+function tick(): void {
   if (!state.isPlaying || state.expired) return;
   const next = state.remaining - 1;
   if (next <= 0) {
-    state = { remaining: 0, isPlaying: false, expired: true };
+    state = { ...state, remaining: 0, isPlaying: false, expired: true };
   } else {
     state = { ...state, remaining: next };
   }
@@ -60,12 +75,12 @@ function tick() {
   notify();
 }
 
-function startInterval() {
+function startInterval(): void {
   if (interval != null) return;
   interval = setInterval(tick, 1000);
 }
 
-function stopInterval() {
+function stopInterval(): void {
   if (interval != null) {
     clearInterval(interval);
     interval = null;
@@ -73,7 +88,7 @@ function stopInterval() {
 }
 
 export const timerStore = {
-  setPlaying(playing: boolean) {
+  setPlaying(playing: boolean): void {
     ensureInit();
     if (state.expired) {
       state = { ...state, isPlaying: false };
@@ -87,14 +102,34 @@ export const timerStore = {
     else stopInterval();
     notify();
   },
-  reset() {
+  setTotalSeconds(totalSeconds: number): void {
     ensureInit();
-    state = { remaining: TOTAL_SECONDS, isPlaying: state.isPlaying, expired: false };
+    const nextTotal = Math.max(60, Math.floor(totalSeconds));
+    if (state.totalSeconds === nextTotal) return;
+
+    state = {
+      remaining: nextTotal,
+      totalSeconds: nextTotal,
+      isPlaying: state.isPlaying,
+      expired: false,
+    };
     persist();
     if (state.isPlaying) startInterval();
     notify();
   },
-  subscribe(l: () => void) {
+  reset(): void {
+    ensureInit();
+    state = {
+      remaining: state.totalSeconds,
+      totalSeconds: state.totalSeconds,
+      isPlaying: state.isPlaying,
+      expired: false,
+    };
+    persist();
+    if (state.isPlaying) startInterval();
+    notify();
+  },
+  subscribe(l: () => void): () => void {
     ensureInit();
     listeners.add(l);
     return () => {
@@ -109,11 +144,16 @@ export const timerStore = {
 
 const SERVER_SNAPSHOT: State = {
   remaining: TOTAL_SECONDS,
+  totalSeconds: TOTAL_SECONDS,
   isPlaying: false,
   expired: false,
 };
 
-export function useWatchTimer() {
+export function useWatchTimer(): State & {
+  reset: () => void;
+  setPlaying: (playing: boolean) => void;
+  setTotalSeconds: (totalSeconds: number) => void;
+} {
   const s = useSyncExternalStore(
     timerStore.subscribe,
     timerStore.get,
@@ -123,11 +163,12 @@ export function useWatchTimer() {
     ...s,
     reset: timerStore.reset,
     setPlaying: timerStore.setPlaying,
+    setTotalSeconds: timerStore.setTotalSeconds,
   };
 }
 
 // Hook that signals video play/pause to the timer
-export function useReportPlayState(playing: boolean) {
+export function useReportPlayState(playing: boolean): void {
   useEffect(() => {
     timerStore.setPlaying(playing);
     return () => {

@@ -12,5 +12,11 @@ export const videos = pgTable("videos", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const appSettings = pgTable("app_settings", {
+  id: integer("id").primaryKey().default(1),
+  screenTimeMinutes: integer("screen_time_minutes").notNull().default(15),
+});
+
 export type Video = typeof videos.$inferSelect;
 export type NewVideo = typeof videos.$inferInsert;
+export type AppSettings = typeof appSettings.$inferSelect;

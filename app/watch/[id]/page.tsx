@@ -107,7 +107,7 @@ export default function WatchPage({
               </span>
               <CardTitle className="text-2xl font-semibold">Time&apos;s up</CardTitle>
               <CardDescription className="max-w-xs text-base">
-                Hit Reset on the timer below when it&apos;s time for more shows.
+                Time for a break. Come back later for more shows.
               </CardDescription>
             </CardContent>
           </Card>

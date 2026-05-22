@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AlarmClock } from "lucide-react";
 import { useWatchTimer } from "@/lib/timer-store";
-import { Button } from "@/components/ui/button";
+import { getSettings } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -15,11 +16,22 @@ function fmt(s: number): string {
 }
 
 export function WatchTimerBar(): ReactElement | null {
-  const { remaining, expired, reset } = useWatchTimer();
+  const { remaining, totalSeconds, expired, setTotalSeconds } = useWatchTimer();
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: getSettings,
+  });
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!settings) return;
+    setTotalSeconds(settings.screenTimeMinutes * 60);
+  }, [settings, setTotalSeconds]);
+
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
+  const remainingRatio = Math.max(0, Math.min(1, remaining / totalSeconds));
   let barAccent = "from-emerald-400/90 to-teal-500/90";
   let chip = "bg-emerald-500/15 text-emerald-900 dark:text-emerald-100";
   let label = "Screen time left";
@@ -46,13 +58,15 @@ export function WatchTimerBar(): ReactElement | null {
           "bg-card/95 ring-1 ring-black/[0.06]",
         )}
       >
-        <div
-          className={cn(
-            "h-1.5 w-full bg-gradient-to-r transition-all duration-500",
-            barAccent,
-          )}
-          aria-hidden
-        />
+        <div className="h-1.5 w-full bg-muted" aria-hidden>
+          <div
+            className={cn(
+              "h-full bg-gradient-to-r transition-[width] duration-500 ease-linear",
+              barAccent,
+            )}
+            style={{ width: `${remainingRatio * 100}%` }}
+          />
+        </div>
         <CardContent className="flex flex-wrap items-center gap-4 py-4 sm:flex-nowrap">
           <div
             className={cn(
@@ -70,15 +84,6 @@ export function WatchTimerBar(): ReactElement | null {
               {expired ? "0:00" : fmt(remaining)}
             </p>
           </div>
-          <Button
-            type="button"
-            variant="default"
-            size="lg"
-            className="w-full shrink-0 sm:w-auto"
-            onClick={reset}
-          >
-            Reset to 15:00
-          </Button>
         </CardContent>
       </Card>
     </div>

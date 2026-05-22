@@ -27,12 +27,10 @@ export function Player({
   const endedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [blockClicks, setBlockClicks] = useState(false);
-  const [remainingRatio, setRemainingRatio] = useState(1);
 
   useEffect(() => {
     endedRef.current = false;
     setBlockClicks(false);
-    setRemainingRatio(1);
     return () => {
       if (watchRef.current) clearInterval(watchRef.current);
       timerStore.setPlaying(false);
@@ -72,11 +70,8 @@ export function Player({
         // recommendation thumbnails on top of the video.
         if (typeof t === "number" && typeof d === "number" && d > 0) {
           const stopAt = endSeconds && endSeconds < d ? endSeconds : d;
-          const startFrom = startSeconds ?? 0;
-          const total = Math.max(0.01, stopAt - startFrom);
           const remaining = Math.max(0, stopAt - t);
           setBlockClicks(remaining > 0 && remaining <= 20);
-          setRemainingRatio(Math.max(0, Math.min(1, remaining / total)));
         }
       } catch {
         /* player API may throw while tearing down */
@@ -109,7 +104,6 @@ export function Player({
       timerStore.setPlaying(false);
       if (s === 0) {
         setBlockClicks(true);
-        setRemainingRatio(0);
         if (!endedRef.current) {
           endedRef.current = true;
           onEnded();
@@ -164,26 +158,17 @@ export function Player({
       {blockClicks ? (
         <div className="absolute inset-0" aria-hidden="true" />
       ) : null}
-      {/* Hide the "More videos" / Watch later button YouTube renders in the top-right */}
+      {/* YouTube provides no parameter to disable the "More videos" UI, and
+          the iframe is cross-origin so CSS can't reach it. These shields catch
+          clicks on the areas where YouTube renders external navigation. */}
       <div
-        className="pointer-events-auto absolute right-0 top-0 h-14 w-44 bg-black"
+        className="pointer-events-auto absolute right-0 top-0 z-10 h-20 w-64 bg-black"
         aria-hidden="true"
       />
-      {/* Remaining-time progress bar: shrinks and shifts color as time runs out */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5 bg-black/50">
-        <div
-          className="h-full transition-[width,background-color] duration-500 ease-linear"
-          style={{
-            width: `${remainingRatio * 100}%`,
-            backgroundColor:
-              remainingRatio > 0.5
-                ? "rgb(34 197 94)"
-                : remainingRatio > 0.2
-                  ? "rgb(234 179 8)"
-                  : "rgb(239 68 68)",
-          }}
-        />
-      </div>
+      <div
+        className="pointer-events-auto absolute bottom-0 right-24 z-10 h-20 w-56 sm:right-36"
+        aria-hidden="true"
+      />
       {error ? (
         <div className="absolute inset-0 grid place-items-center bg-background/95 p-6 text-center backdrop-blur-sm">
           <p className="max-w-sm text-sm font-medium text-destructive">{error}</p>

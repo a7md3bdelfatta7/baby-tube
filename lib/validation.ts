@@ -11,4 +11,9 @@ export const videoInput = z.object({
 
 export const videoUpdate = videoInput.partial();
 
+export const settingsInput = z.object({
+  screenTimeMinutes: z.number().int().min(1).max(180),
+});
+
 export type VideoInput = z.infer<typeof videoInput>;
+export type SettingsInput = z.infer<typeof settingsInput>;

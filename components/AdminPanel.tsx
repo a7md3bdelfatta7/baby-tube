@@ -3,8 +3,9 @@
 import type { ReactElement } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  AlarmClock,
   House,
   ListMusic,
   ListVideo,
@@ -16,8 +17,10 @@ import {
 import {
   createVideo,
   deleteVideo,
+  getSettings,
   importPlaylist,
   listVideos,
+  updateSettings,
   updateVideo,
 } from "@/lib/api";
 import type { Video } from "@/db/schema";
@@ -46,7 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type Tab = "list" | "single" | "multi" | "playlist";
+type Tab = "list" | "settings" | "single" | "multi" | "playlist";
 
 export function AdminPanel(): ReactElement {
   const [tab, setTab] = useState<Tab>("list");
@@ -62,6 +65,13 @@ export function AdminPanel(): ReactElement {
           <TabsTrigger value="list" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
             <ListVideo className="size-4" />
             Video list
+          </TabsTrigger>
+          <TabsTrigger
+            value="settings"
+            className="gap-1.5 rounded-xl data-[active]:shadow-sm"
+          >
+            <AlarmClock className="size-4" />
+            Settings
           </TabsTrigger>
           <TabsTrigger value="single" className="gap-1.5 rounded-xl data-[active]:shadow-sm">
             <Plus className="size-4" />
@@ -89,6 +99,9 @@ export function AdminPanel(): ReactElement {
 
       <TabsContent value="list" className="mt-0 outline-none">
         <VideoList />
+      </TabsContent>
+      <TabsContent value="settings" className="mt-0 outline-none">
+        <SettingsPanel />
       </TabsContent>
       <TabsContent value="single" className="mt-0 outline-none">
         <SingleUpload />
@@ -224,6 +237,80 @@ function VideoList(): ReactElement {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function SettingsPanel(): ReactElement {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["settings"],
+    queryFn: getSettings,
+  });
+  const [screenTimeMinutes, setScreenTimeMinutes] = useState("15");
+  const parsedMinutes = Number(screenTimeMinutes);
+  const isValid =
+    Number.isInteger(parsedMinutes) && parsedMinutes >= 1 && parsedMinutes <= 180;
+
+  useEffect(() => {
+    if (!data) return;
+    setScreenTimeMinutes(String(data.screenTimeMinutes));
+  }, [data]);
+
+  const m = useMutation({
+    mutationFn: () => updateSettings({ screenTimeMinutes: parsedMinutes }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+  });
+
+  return (
+    <Card className="rounded-2xl border-border/70 shadow-lg shadow-black/[0.04]">
+      <CardHeader>
+        <CardTitle>Screen time</CardTitle>
+        <CardDescription>
+          Set how many minutes a watch session can run before the break screen
+          appears.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:max-w-xs">
+          <Input
+            type="number"
+            min={1}
+            max={180}
+            step={1}
+            placeholder="15"
+            value={screenTimeMinutes}
+            onChange={(e) => setScreenTimeMinutes(e.target.value)}
+            disabled={isLoading}
+            aria-invalid={!isValid ? true : undefined}
+          />
+          <p className="text-xs text-muted-foreground">
+            Use a whole number between 1 and 180 minutes.
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            onClick={() => m.mutate()}
+            disabled={!isValid || isLoading || m.isPending}
+          >
+            {m.isPending ? "Saving…" : "Save settings"}
+          </Button>
+        </div>
+        {!isValid ? (
+          <p className="text-sm text-destructive">
+            Enter a valid screen-time limit before saving.
+          </p>
+        ) : null}
+        {m.isSuccess ? (
+          <p className="text-sm text-emerald-600">Settings saved.</p>
+        ) : null}
+        {m.isError ? (
+          <p className="text-sm text-destructive">
+            {(m.error as Error)?.message ?? "Save failed"}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 

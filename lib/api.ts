@@ -1,6 +1,6 @@
 "use client";
 
-import type { Video } from "@/db/schema";
+import type { AppSettings, Video } from "@/db/schema";
 
 function adminHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -54,5 +54,23 @@ export async function importPlaylist(
     body: JSON.stringify({ url }),
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Import failed");
+  return res.json();
+}
+
+export async function getSettings(): Promise<AppSettings> {
+  const res = await fetch("/api/settings", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load settings");
+  return res.json();
+}
+
+export async function updateSettings(input: {
+  screenTimeMinutes: number;
+}): Promise<AppSettings> {
+  const res = await fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "content-type": "application/json", ...adminHeaders() },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error((await res.json()).error?.message ?? "Failed");
   return res.json();
 }
