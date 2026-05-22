@@ -4,10 +4,11 @@ import type { ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo } from "react";
+import { use, useMemo, useState } from "react";
 import { ArrowLeft, Home, SkipForward } from "lucide-react";
 import { Player } from "@/components/Player";
-import { listVideos } from "@/lib/api";
+import { getQueue, listVideos } from "@/lib/api";
+import { getSessionPlaybackQueue, getVisibleVideos } from "@/lib/queue";
 import { useWatchTimer } from "@/lib/timer-store";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,19 +25,28 @@ const PASTELS = [
 
 export default function WatchPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ queue?: string }>;
 }): ReactElement {
   const { id } = use(params);
+  const { queue: queueMode } = use(searchParams);
   const router = useRouter();
   const { expired } = useWatchTimer();
+  const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
+  const useSessionQueue = queueMode === "session";
 
   const { data: videos } = useQuery({
     queryKey: ["videos"],
     queryFn: listVideos,
   });
+  const { data: queue, isLoading: isQueueLoading } = useQuery({
+    queryKey: ["queue"],
+    queryFn: getQueue,
+  });
 
-  const { current, currentIdx, next, prev, isLast } = useMemo(() => {
+  const { current, currentIdx, next, prev, isLast, isQueueActive } = useMemo(() => {
     if (!videos) {
       return {
         current: null,
@@ -44,24 +54,36 @@ export default function WatchPage({
         next: null,
         prev: null,
         isLast: false,
+        isQueueActive: false,
       };
     }
-    const idx = videos.findIndex((v) => String(v.id) === String(id));
+
+    const visible = getVisibleVideos(
+      videos,
+      useSessionQueue ? sessionQueueIds : (queue?.queueVideoIds ?? []),
+    );
+    const idx = visible.videos.findIndex((v) => String(v.id) === String(id));
+
     return {
-      current: idx >= 0 ? videos[idx] : null,
+      current: idx >= 0 ? visible.videos[idx] : null,
       currentIdx: idx,
-      next: idx >= 0 && idx < videos.length - 1 ? videos[idx + 1] : null,
-      prev: idx > 0 ? videos[idx - 1] : null,
-      isLast: idx === videos.length - 1,
+      next:
+        idx >= 0 && idx < visible.videos.length - 1
+          ? visible.videos[idx + 1]
+          : null,
+      prev: idx > 0 ? visible.videos[idx - 1] : null,
+      isLast: idx === visible.videos.length - 1,
+      isQueueActive: visible.isQueueActive,
     };
-  }, [videos, id]);
+  }, [id, queue, sessionQueueIds, useSessionQueue, videos]);
 
   const goNext = (): void => {
-    if (next) router.push(`/watch/${next.id}`);
+    const queueSuffix = useSessionQueue ? "?queue=session" : "";
+    if (next) router.push(`/watch/${next.id}${queueSuffix}`);
     else router.push("/");
   };
 
-  if (!videos) {
+  if (!videos || isQueueLoading) {
     return (
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 md:pt-8">
         <div className="space-y-5">
@@ -183,6 +205,11 @@ export default function WatchPage({
         <h1 className="text-balance font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
           {current.title}
         </h1>
+        {isQueueActive ? (
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
+            Playing from {useSessionQueue ? "this category" : "today's queue"}
+          </p>
+        ) : null}
         <div
           className="mt-3 h-1 rounded-full"
           style={{
@@ -193,12 +220,20 @@ export default function WatchPage({
 
       {/* Up next / replay */}
       <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {next && <UpNextCard label="Up next" video={next} accent={PASTELS[(currentIdx + 1) % PASTELS.length]} />}
+        {next && (
+          <UpNextCard
+            label="Up next"
+            video={next}
+            accent={PASTELS[(currentIdx + 1) % PASTELS.length]}
+            preserveSessionQueue={useSessionQueue}
+          />
+        )}
         {!next && isLast && prev && (
           <UpNextCard
             label="Watch again"
             video={prev}
             accent={PASTELS[(currentIdx + 5) % PASTELS.length]}
+            preserveSessionQueue={useSessionQueue}
           />
         )}
       </div>
@@ -210,6 +245,7 @@ function UpNextCard({
   label,
   video,
   accent,
+  preserveSessionQueue,
 }: {
   label: string;
   video: {
@@ -219,12 +255,14 @@ function UpNextCard({
     thumbnailUrl: string | null;
   };
   accent: string;
+  preserveSessionQueue: boolean;
 }): ReactElement {
   const ytId = extractVideoId(video.videoUrl);
   const thumb = video.thumbnailUrl ?? (ytId ? thumbnailFor(ytId) : null);
+  const href = `/watch/${video.id}${preserveSessionQueue ? "?queue=session" : ""}`;
   return (
     <Link
-      href={`/watch/${video.id}`}
+      href={href}
       className={cn(
         "group block rounded-[1.75rem] outline-none transition-all",
         "focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-2",

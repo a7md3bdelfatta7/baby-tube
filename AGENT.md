@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Baby Tube is a curated YouTube video player for children. It has a public home page, a watch page with clip enforcement and a 15-minute screen-time timer, and an admin area for adding, editing, deleting, bulk uploading, and importing YouTube playlist videos.
+Baby Tube is a curated YouTube video player for children. It has a public home page grouped by content categories, an optional parent-managed watch queue, a watch page with clip enforcement and a 15-minute screen-time timer, and an admin area for adding, editing, deleting, bulk uploading, tagging, queueing, and importing YouTube playlist videos.
 
 ## Stack
 
@@ -65,7 +65,7 @@ pnpm run dev
 - `app/watch/[id]/page.tsx`: watch experience and next-video flow.
 - `app/admin/page.tsx`: admin entry point.
 - `components/AdminGate.tsx`: password gate for admin UI.
-- `components/AdminPanel.tsx`: admin video list, single upload, multi upload, and playlist import UI.
+- `components/AdminPanel.tsx`: admin video list, queue builder, single upload, multi upload, and playlist import UI.
 - `components/Player.tsx`: YouTube playback, start/end clip enforcement, error skip behavior, and timer play state updates.
 - `components/WatchTimer.tsx`: fixed 15-minute timer UI.
 - `lib/timer-store.ts`: persisted watch timer state.
@@ -78,6 +78,7 @@ pnpm run dev
 - `app/api/videos/route.ts`: list and create videos.
 - `app/api/videos/[id]/route.ts`: get, update, and delete one video.
 - `app/api/videos/import-playlist/route.ts`: server-side playlist import. It has `maxDuration = 60` for Vercel.
+- `app/api/queue/route.ts`: public queue read and admin-only queue update for the ordered watch queue.
 
 ## Data Model
 
@@ -88,12 +89,15 @@ The main table is `videos`:
 - `description`
 - `videoUrl`
 - `thumbnailUrl`
+- `categories`
 - `startSeconds`
 - `endSeconds`
 - `position`
 - `createdAt`
 
 Video ordering is by `position`, then `id`.
+
+The `app_settings` table includes `screenTimeMinutes` and `queueVideoIds`. An empty `queueVideoIds` list means the child-facing app shows the full library.
 
 When changing persisted data, update `db/schema.ts` first, then run the appropriate Drizzle command. For local development, `pnpm run db:push` is the common path.
 

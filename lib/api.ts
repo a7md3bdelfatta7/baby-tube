@@ -1,6 +1,7 @@
 "use client";
 
 import type { AppSettings, Video } from "@/db/schema";
+import type { QueueState } from "@/lib/queue";
 
 function adminHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -43,6 +44,22 @@ export async function deleteVideo(id: number): Promise<void> {
     headers: { ...adminHeaders() },
   });
   if (!res.ok) throw new Error("Failed to delete");
+}
+
+export async function getQueue(): Promise<QueueState> {
+  const res = await fetch("/api/queue", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load queue");
+  return res.json();
+}
+
+export async function updateQueue(input: QueueState): Promise<QueueState> {
+  const res = await fetch("/api/queue", {
+    method: "PATCH",
+    headers: { "content-type": "application/json", ...adminHeaders() },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error((await res.json()).error?.message ?? "Failed");
+  return res.json();
 }
 
 export async function importPlaylist(

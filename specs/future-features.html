@@ -153,6 +153,11 @@
         background: linear-gradient(145deg, var(--card), var(--peach));
       }
 
+      .feature.implemented {
+        border-color: rgba(52, 168, 83, 0.32);
+        background: linear-gradient(145deg, #ffffff, var(--mint));
+      }
+
       .feature-header {
         display: flex;
         align-items: flex-start;
@@ -197,6 +202,11 @@
         color: #4b5870;
         font-size: 0.82rem;
         font-weight: 700;
+      }
+
+      .tag.implemented {
+        background: #e6f6ec;
+        color: #24713f;
       }
 
       .roadmap {
@@ -272,15 +282,19 @@
       <section aria-labelledby="features-heading">
         <h2 id="features-heading">Recommended Features</h2>
         <div class="features">
-          <article class="feature">
+          <article class="feature implemented">
             <div class="feature-header">
               <span class="rank">1</span>
-              <h3>Safer Player Controls</h3>
+              <div>
+                <h3>Safer Player Controls</h3>
+                <span class="tag implemented">Implemented</span>
+              </div>
             </div>
             <p>
-              Move toward app-owned play, pause, resume, and next controls using the
-              YouTube Player API. This reduces reliance on YouTube iframe clicks and
-              lowers the risk of kids tapping external overlays or recommendations.
+              Implemented app-owned play, pause, resume, replay, next, fullscreen,
+              and progress controls using the YouTube Player API. The YouTube iframe
+              is now non-interactive, reducing the risk of kids tapping external
+              overlays or recommendations.
             </p>
             <div class="tag-list">
               <span class="tag">Safety</span>
@@ -289,15 +303,18 @@
             </div>
           </article>
 
-          <article class="feature">
+          <article class="feature implemented">
             <div class="feature-header">
               <span class="rank">2</span>
-              <h3>Content Categories</h3>
+              <div>
+                <h3>Content Categories</h3>
+                <span class="tag implemented">Implemented</span>
+              </div>
             </div>
             <p>
-              Add tags such as Songs, Learning, Bedtime, Arabic, Animals, and Short
-              Clips. The home page can then show curated sections instead of one flat
-              list, making discovery easier for both parents and children.
+              Implemented tags such as Songs, Learning, Bedtime, Arabic, Animals,
+              and Short Clips. The home page now shows curated sections instead of
+              one flat list, making discovery easier for both parents and children.
             </p>
             <div class="tag-list">
               <span class="tag">Content</span>
@@ -306,15 +323,19 @@
             </div>
           </article>
 
-          <article class="feature">
+          <article class="feature implemented">
             <div class="feature-header">
               <span class="rank">3</span>
-              <h3>Watch Queue / Playlist Mode</h3>
+              <div>
+                <h3>Watch Queue / Playlist Mode</h3>
+                <span class="tag implemented">Implemented</span>
+              </div>
             </div>
             <p>
-              Let parents build a "today's queue" from approved videos. The child
-              only sees the selected queue, and the app can auto-advance through it
-              safely until the queue or screen time ends.
+              Implemented a parent-managed "today's queue" from approved videos.
+              When the queue has videos, the child only sees the selected queue,
+              and the app auto-advances through it safely until the queue or screen
+              time ends.
             </p>
             <div class="tag-list">
               <span class="tag">Parent control</span>

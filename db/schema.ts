@@ -1,4 +1,12 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const videos = pgTable("videos", {
   id: serial("id").primaryKey(),
@@ -6,6 +14,10 @@ export const videos = pgTable("videos", {
   description: text("description").notNull().default(""),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
+  categories: jsonb("categories")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   startSeconds: integer("start_seconds"),
   endSeconds: integer("end_seconds"),
   position: integer("position").notNull().default(0),
@@ -15,6 +27,10 @@ export const videos = pgTable("videos", {
 export const appSettings = pgTable("app_settings", {
   id: integer("id").primaryKey().default(1),
   screenTimeMinutes: integer("screen_time_minutes").notNull().default(15),
+  queueVideoIds: jsonb("queue_video_ids")
+    .$type<number[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
 });
 
 export type Video = typeof videos.$inferSelect;

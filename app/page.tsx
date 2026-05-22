@@ -1,10 +1,15 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Clapperboard, Play, Sparkles, Settings2 } from "lucide-react";
-import { listVideos } from "@/lib/api";
+import type { Video } from "@/db/schema";
+import { getQueue, listVideos } from "@/lib/api";
+import { CONTENT_CATEGORIES, type ContentCategory } from "@/lib/categories";
+import { getVisibleVideos, setSessionPlaybackQueue } from "@/lib/queue";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,21 +26,127 @@ const PASTELS = [
   { bg: "var(--tots-pink)", emoji: "🎀" },
 ] as const;
 
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  Songs: "Sing-along favorites and musical moments.",
+  Learning: "Gentle videos for curious little minds.",
+  Bedtime: "Calmer picks for winding down.",
+  Arabic: "Arabic songs and stories for language time.",
+  Animals: "Friendly creatures, pets, and nature clips.",
+  "Short Clips": "Quick videos for smaller watch moments.",
+  Uncategorized: "Videos waiting for a grown-up to sort.",
+};
+
+type VideoSection = {
+  title: string;
+  description: string;
+  videos: Video[];
+};
+
+type CategoryFilter = ContentCategory | "All" | "Uncategorized";
+
+type CategoryFilterOption = {
+  label: CategoryFilter;
+  count: number;
+};
+
+function buildVideoSections(videos: Video[]): VideoSection[] {
+  const categorized = CONTENT_CATEGORIES.map((category) => ({
+    title: category,
+    description: CATEGORY_DESCRIPTIONS[category],
+    videos: videos.filter((video) => video.categories.includes(category)),
+  })).filter((section) => section.videos.length > 0);
+
+  const uncategorized = videos.filter((video) => video.categories.length === 0);
+
+  if (uncategorized.length === 0) return categorized;
+
+  return [
+    ...categorized,
+    {
+      title: "Uncategorized",
+      description: CATEGORY_DESCRIPTIONS.Uncategorized,
+      videos: uncategorized,
+    },
+  ];
+}
+
+function buildCategoryFilters(videos: Video[]): CategoryFilterOption[] {
+  const categoryFilters = CONTENT_CATEGORIES.map((category) => ({
+    label: category,
+    count: videos.filter((video) => video.categories.includes(category)).length,
+  })).filter((filter) => filter.count > 0);
+
+  const uncategorizedCount = videos.filter(
+    (video) => video.categories.length === 0,
+  ).length;
+
+  return [
+    { label: "All", count: videos.length },
+    ...categoryFilters,
+    ...(uncategorizedCount > 0
+      ? [{ label: "Uncategorized" as const, count: uncategorizedCount }]
+      : []),
+  ];
+}
+
+function filterVideos(videos: Video[], category: CategoryFilter): Video[] {
+  if (category === "All") return videos;
+  if (category === "Uncategorized") {
+    return videos.filter((video) => video.categories.length === 0);
+  }
+
+  return videos.filter((video) => video.categories.includes(category));
+}
+
 export default function HomePage(): ReactElement {
+  const router = useRouter();
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryFilter>("All");
   const { data: videos, isLoading } = useQuery({
     queryKey: ["videos"],
     queryFn: listVideos,
   });
+  const { data: queue, isLoading: isQueueLoading } = useQuery({
+    queryKey: ["queue"],
+    queryFn: getQueue,
+  });
+  const visible = useMemo(
+    () =>
+      videos
+        ? getVisibleVideos(videos, queue?.queueVideoIds ?? [])
+        : { videos: [], isQueueActive: false },
+    [queue, videos],
+  );
+  const sections = useMemo(
+    () => buildVideoSections(visible.videos),
+    [visible.videos],
+  );
+  const categoryFilters = useMemo(
+    () => buildCategoryFilters(visible.videos),
+    [visible.videos],
+  );
+  const filteredVideos = useMemo(
+    () => filterVideos(visible.videos, selectedCategory),
+    [selectedCategory, visible.videos],
+  );
+  const isPageLoading = isLoading || isQueueLoading;
+  const playCategory = (categoryVideos: Video[]): void => {
+    const firstVideo = categoryVideos[0];
+    if (!firstVideo) return;
+
+    setSessionPlaybackQueue(categoryVideos.map((video) => video.id));
+    router.push(`/watch/${firstVideo.id}?queue=session`);
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-20 pt-6 md:pt-8">
       <TopNav />
 
-      <Hero count={videos?.length ?? 0} />
+      <Hero count={visible.videos.length} isQueueActive={visible.isQueueActive} />
 
-      {isLoading && <VideoGridSkeleton />}
+      {isPageLoading && <VideoGridSkeleton />}
 
-      {!isLoading && videos && videos.length === 0 && (
+      {!isPageLoading && videos && visible.videos.length === 0 && (
         <Alert className="mx-auto max-w-lg rounded-3xl border-2 border-dashed border-primary/30 bg-card/90 p-6 shadow-xl backdrop-blur-sm">
           <Clapperboard className="size-5 text-primary" />
           <AlertTitle className="font-display text-base">No videos yet</AlertTitle>
@@ -46,7 +157,7 @@ export default function HomePage(): ReactElement {
         </Alert>
       )}
 
-      {!isLoading && videos && videos.length > 0 ? (
+      {!isPageLoading && videos && visible.videos.length > 0 ? (
         <section aria-labelledby="videos-heading" className="mt-2">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
@@ -54,11 +165,12 @@ export default function HomePage(): ReactElement {
                 id="videos-heading"
                 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl"
               >
-                Today&apos;s playroom
+                {visible.isQueueActive ? "Today's queue" : "Explore by category"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {videos.length} happy video{videos.length === 1 ? "" : "s"} ready
-                to play
+                {selectedCategory === "All"
+                  ? `${visible.videos.length} happy video${visible.videos.length === 1 ? "" : "s"} ready to play`
+                  : `${filteredVideos.length} video${filteredVideos.length === 1 ? "" : "s"} in ${selectedCategory}`}
               </p>
             </div>
             <Badge
@@ -66,90 +178,285 @@ export default function HomePage(): ReactElement {
               className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
             >
               <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
-              hand-picked
+              {visible.isQueueActive ? "parent-picked" : "hand-picked"}
             </Badge>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
-            {videos.map((v, idx) => {
-              const ytId = extractVideoId(v.videoUrl);
-              const thumb =
-                v.thumbnailUrl ?? (ytId ? thumbnailFor(ytId) : null);
-              const tone = PASTELS[idx % PASTELS.length];
-              return (
-                <Link
-                  key={v.id}
-                  href={`/watch/${v.id}`}
-                  className={cn(
-                    "group block rounded-[2rem] outline-none transition-all duration-300",
-                    "focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent",
-                    "hover:-translate-y-1.5 hover:rotate-[-0.4deg]",
-                    "animate-pop-in",
-                  )}
-                  style={{ animationDelay: `${Math.min(idx, 10) * 40}ms` }}
-                >
-                  <article
-                    className={cn(
-                      "relative h-full overflow-hidden rounded-[2rem] bg-white p-2.5 shadow-[0_18px_40px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
-                      "group-hover:shadow-[0_28px_50px_-18px_rgba(80,90,160,0.45)]",
-                    )}
-                  >
-                    <div
-                      className="relative aspect-video overflow-hidden rounded-[1.4rem]"
-                      style={{ backgroundColor: `var(${"--pastel-blue" as const})`, background: `linear-gradient(135deg, ${tone.bg}, color-mix(in oklch, ${tone.bg} 60%, white))` }}
-                    >
-                      {thumb ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={thumb}
-                          alt={v.title}
-                          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center text-4xl">
-                          <span aria-hidden>{tone.emoji}</span>
-                        </div>
-                      )}
+          <CategoryFilterBar
+            options={categoryFilters}
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
 
-                      {/* play button bubble */}
-                      <div className="absolute inset-0 grid place-items-center">
-                        <span
-                          className={cn(
-                            "flex size-14 items-center justify-center rounded-full bg-white/95 text-[color:var(--tots-ink)] shadow-xl ring-4 ring-white/40",
-                            "scale-90 opacity-0 transition-all duration-300",
-                            "group-hover:scale-100 group-hover:opacity-100",
-                            "md:size-16",
-                          )}
-                        >
-                          <Play
-                            className="size-6 fill-current pl-0.5 md:size-7"
-                            aria-hidden
-                          />
-                        </span>
-                      </div>
-
-                      {/* floating sticker */}
-                      <span
-                        className="absolute -right-1 -top-1 grid size-10 place-items-center rounded-full bg-white text-lg shadow-lg ring-2 ring-white/80 transition-transform duration-500 group-hover:rotate-12 md:size-11 md:text-xl"
-                        aria-hidden
-                      >
-                        {tone.emoji}
-                      </span>
-                    </div>
-
-                    <div className="px-1 pb-1 pt-3">
-                      <h3 className="line-clamp-2 font-display text-[0.95rem] font-semibold leading-snug tracking-tight text-foreground md:text-base">
-                        {v.title}
-                      </h3>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
+          {selectedCategory === "All" ? (
+            <CategorySections sections={sections} onPlay={playCategory} />
+          ) : (
+            <FilteredVideoGrid
+              category={selectedCategory}
+              videos={filteredVideos}
+              onPlay={playCategory}
+            />
+          )}
         </section>
       ) : null}
     </main>
+  );
+}
+
+function CategoryFilterBar({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: CategoryFilterOption[];
+  selected: CategoryFilter;
+  onSelect: (category: CategoryFilter) => void;
+}): ReactElement {
+  return (
+    <div
+      className="mb-8 -mx-4 overflow-x-auto px-4 pb-2"
+      aria-label="Filter videos by category"
+    >
+      <div className="flex min-w-max gap-2">
+        {options.map((option) => {
+          const isSelected = option.label === selected;
+
+          return (
+            <button
+              key={option.label}
+              type="button"
+              onClick={() => onSelect(option.label)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm ring-1 ring-black/[0.04] transition",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
+                isSelected
+                  ? "bg-[color:var(--tots-ink)] text-[color:var(--tots-cream)]"
+                  : "bg-white/75 text-foreground backdrop-blur hover:-translate-y-0.5 hover:bg-white",
+              )}
+              aria-pressed={isSelected}
+            >
+              <span>{option.label}</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs",
+                  isSelected
+                    ? "bg-white/15 text-[color:var(--tots-cream)]"
+                    : "bg-[color:var(--tots-cream)] text-muted-foreground",
+                )}
+              >
+                {option.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CategorySections({
+  sections,
+  onPlay,
+}: {
+  sections: VideoSection[];
+  onPlay: (videos: Video[]) => void;
+}): ReactElement {
+  return (
+    <div className="space-y-10">
+      {sections.map((section, sectionIndex) => {
+        const headingId = `category-${section.title
+          .toLowerCase()
+          .replace(/\s+/g, "-")}`;
+
+        return (
+          <section key={section.title} aria-labelledby={headingId}>
+            <CategorySectionHeader
+              id={headingId}
+              title={section.title}
+              description={section.description}
+              count={section.videos.length}
+              onPlay={() => onPlay(section.videos)}
+            />
+
+            <VideoCardGrid videos={section.videos} indexOffset={sectionIndex} />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function FilteredVideoGrid({
+  category,
+  videos,
+  onPlay,
+}: {
+  category: CategoryFilter;
+  videos: Video[];
+  onPlay: (videos: Video[]) => void;
+}): ReactElement {
+  return (
+    <section aria-labelledby="filtered-videos-heading">
+      <CategorySectionHeader
+        id="filtered-videos-heading"
+        title={category}
+        description={CATEGORY_DESCRIPTIONS[category]}
+        count={videos.length}
+        onPlay={() => onPlay(videos)}
+      />
+      <VideoCardGrid videos={videos} indexOffset={0} />
+    </section>
+  );
+}
+
+function CategorySectionHeader({
+  id,
+  title,
+  description,
+  count,
+  onPlay,
+}: {
+  id: string;
+  title: string;
+  description: string;
+  count: number;
+  onPlay: () => void;
+}): ReactElement {
+  return (
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h3
+          id={id}
+          className="font-display text-xl font-bold tracking-tight text-foreground md:text-2xl"
+        >
+          {title}
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge
+          variant="secondary"
+          className="rounded-full bg-white/70 px-3 py-1 text-xs"
+        >
+          {count} video{count === 1 ? "" : "s"}
+        </Badge>
+        <button
+          type="button"
+          onClick={onPlay}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full bg-[color:var(--tots-ink)] px-3 py-1.5 text-xs font-semibold text-[color:var(--tots-cream)] shadow-sm transition",
+            "hover:-translate-y-0.5 hover:brightness-110",
+            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
+          )}
+          aria-label={`Play ${title} queue`}
+        >
+          <Play className="size-3.5 fill-current" aria-hidden />
+          Play
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function VideoCardGrid({
+  videos,
+  indexOffset,
+}: {
+  videos: Video[];
+  indexOffset: number;
+}): ReactElement {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+      {videos.map((video, idx) => (
+        <VideoCard
+          key={video.id}
+          video={video}
+          index={idx + indexOffset}
+        />
+      ))}
+    </div>
+  );
+}
+
+function VideoCard({
+  video,
+  index,
+}: {
+  video: Video;
+  index: number;
+}): ReactElement {
+  const ytId = extractVideoId(video.videoUrl);
+  const thumb = video.thumbnailUrl ?? (ytId ? thumbnailFor(ytId) : null);
+  const tone = PASTELS[index % PASTELS.length];
+
+  return (
+    <Link
+      href={`/watch/${video.id}`}
+      className={cn(
+        "group block rounded-[2rem] outline-none transition-all duration-300",
+        "focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent",
+        "hover:-translate-y-1.5 hover:rotate-[-0.4deg]",
+        "animate-pop-in",
+      )}
+      style={{ animationDelay: `${Math.min(index, 10) * 40}ms` }}
+    >
+      <article
+        className={cn(
+          "relative h-full overflow-hidden rounded-[2rem] bg-white p-2.5 shadow-[0_18px_40px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
+          "group-hover:shadow-[0_28px_50px_-18px_rgba(80,90,160,0.45)]",
+        )}
+      >
+        <div
+          className="relative aspect-video overflow-hidden rounded-[1.4rem]"
+          style={{
+            backgroundColor: "var(--pastel-blue)",
+            background: `linear-gradient(135deg, ${tone.bg}, color-mix(in oklch, ${tone.bg} 60%, white))`,
+          }}
+        >
+          {thumb ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={thumb}
+              alt={video.title}
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
+            />
+          ) : (
+            <div className="grid h-full place-items-center text-4xl">
+              <span aria-hidden>{tone.emoji}</span>
+            </div>
+          )}
+
+          <div className="absolute inset-0 grid place-items-center">
+            <span
+              className={cn(
+                "flex size-14 items-center justify-center rounded-full bg-white/95 text-[color:var(--tots-ink)] shadow-xl ring-4 ring-white/40",
+                "scale-90 opacity-0 transition-all duration-300",
+                "group-hover:scale-100 group-hover:opacity-100",
+                "md:size-16",
+              )}
+            >
+              <Play
+                className="size-6 fill-current pl-0.5 md:size-7"
+                aria-hidden
+              />
+            </span>
+          </div>
+
+          <span
+            className="absolute -right-1 -top-1 grid size-10 place-items-center rounded-full bg-white text-lg shadow-lg ring-2 ring-white/80 transition-transform duration-500 group-hover:rotate-12 md:size-11 md:text-xl"
+            aria-hidden
+          >
+            {tone.emoji}
+          </span>
+        </div>
+
+        <div className="px-1 pb-1 pt-3">
+          <h4 className="line-clamp-2 font-display text-[0.95rem] font-semibold leading-snug tracking-tight text-foreground md:text-base">
+            {video.title}
+          </h4>
+        </div>
+      </article>
+    </Link>
   );
 }
 
@@ -171,7 +478,13 @@ function TopNav(): ReactElement {
   );
 }
 
-function Hero({ count }: { count: number }): ReactElement {
+function Hero({
+  count,
+  isQueueActive,
+}: {
+  count: number;
+  isQueueActive: boolean;
+}): ReactElement {
   return (
     <header className="relative mb-10 overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/55 px-6 py-10 shadow-[0_30px_70px_-20px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:px-12 md:py-14">
       {/* decorative pastel blobs */}
@@ -214,7 +527,9 @@ function Hero({ count }: { count: number }): ReactElement {
           className="mb-5 gap-2 rounded-full border-0 bg-white/85 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
         >
           <Sparkles className="size-3.5" aria-hidden />
-          {count > 0 ? `${count} shows ready` : "Welcome"}
+          {count > 0
+            ? `${count} ${isQueueActive ? "queued" : "shows ready"}`
+            : "Welcome"}
         </Badge>
 
         <h1 className="text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight text-[color:var(--tots-ink)] md:text-5xl lg:text-6xl">
