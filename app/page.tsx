@@ -139,7 +139,7 @@ export default function HomePage(): ReactElement {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-20 pt-6 md:pt-8">
+    <main className="mx-auto max-w-6xl px-4 pb-20 pt-4 md:pt-6">
       <TopNav />
 
       <Hero count={visible.videos.length} isQueueActive={visible.isQueueActive} />
@@ -462,7 +462,7 @@ function VideoCard({
 
 function TopNav(): ReactElement {
   return (
-    <div className="mb-8 flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:px-4 md:py-3">
+    <div className="mb-5 flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:mb-6 md:px-4 md:py-3">
       <BrandLogo size="md" />
       <Link
         href="/admin"
@@ -486,7 +486,7 @@ function Hero({
   isQueueActive: boolean;
 }): ReactElement {
   return (
-    <header className="relative mb-10 overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/55 px-6 py-10 shadow-[0_30px_70px_-20px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:px-12 md:py-14">
+    <header className="relative mb-7 overflow-hidden rounded-[2rem] border border-white/60 bg-white/55 px-5 py-7 shadow-[0_24px_56px_-22px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:mb-8 md:px-10 md:py-10">
       {/* decorative pastel blobs */}
       <div className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-[color:var(--tots-sunshine)] opacity-70 blur-3xl md:size-72" />
       <div className="pointer-events-none absolute -bottom-24 -left-10 size-56 rounded-full bg-[color:var(--tots-mint)] opacity-70 blur-3xl md:size-72" />
@@ -498,7 +498,7 @@ function Hero({
         src="/brand/tots-brand-kit/svg/tots-icon-transparent.svg"
         alt=""
         aria-hidden
-        className="pointer-events-none absolute -right-4 bottom-4 hidden size-40 animate-float-slow opacity-95 md:block lg:size-48"
+        className="pointer-events-none absolute -right-3 bottom-3 hidden size-32 animate-float-slow opacity-95 md:block lg:size-40"
       />
 
       {/* floating sticker emojis */}
@@ -524,7 +524,7 @@ function Hero({
       <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
         <Badge
           variant="secondary"
-          className="mb-5 gap-2 rounded-full border-0 bg-white/85 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
+          className="mb-4 gap-2 rounded-full border-0 bg-white/85 px-3.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
         >
           <Sparkles className="size-3.5" aria-hidden />
           {count > 0
@@ -532,7 +532,7 @@ function Hero({
             : "Welcome"}
         </Badge>
 
-        <h1 className="text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight text-[color:var(--tots-ink)] md:text-5xl lg:text-6xl">
+        <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-[color:var(--tots-ink)] md:text-4xl lg:text-5xl">
           Hi little star{" "}
           <span className="inline-block animate-wave" aria-hidden>
             👋
@@ -544,7 +544,7 @@ function Hero({
           </span>
         </h1>
 
-        <p className="mx-auto mt-5 max-w-md text-pretty text-base text-muted-foreground md:text-lg">
+        <p className="mx-auto mt-4 max-w-md text-pretty text-sm text-muted-foreground md:text-base">
           Tap a happy bubble below — your show plays full screen on the next page.
         </p>
       </div>
