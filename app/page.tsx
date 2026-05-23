@@ -1,20 +1,32 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clapperboard, Play, Sparkles, Settings2 } from "lucide-react";
-import type { Video } from "@/db/schema";
-import { getQueue, listVideos } from "@/lib/api";
+import {
+  Baby,
+  Clapperboard,
+  Play,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
+import type { ChildProfile, Video } from "@/db/schema";
+import { getProfiles, getQueue, listVideos } from "@/lib/api";
 import { CONTENT_CATEGORIES, type ContentCategory } from "@/lib/categories";
+import {
+  filterVideosForProfile,
+  setActiveChildProfileId,
+  useActiveChildProfile,
+} from "@/lib/profiles";
 import { getVisibleVideos, setSessionPlaybackQueue } from "@/lib/queue";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BrandLogo } from "@/components/BrandLogo";
+import { WatchTimerCard } from "@/components/WatchTimer";
 import { cn } from "@/lib/utils";
 
 const PASTELS = [
@@ -26,49 +38,12 @@ const PASTELS = [
   { bg: "var(--tots-pink)", emoji: "🎀" },
 ] as const;
 
-const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  Songs: "Sing-along favorites and musical moments.",
-  Learning: "Gentle videos for curious little minds.",
-  Bedtime: "Calmer picks for winding down.",
-  Arabic: "Arabic songs and stories for language time.",
-  Animals: "Friendly creatures, pets, and nature clips.",
-  "Short Clips": "Quick videos for smaller watch moments.",
-  Uncategorized: "Videos waiting for a grown-up to sort.",
-};
-
-type VideoSection = {
-  title: string;
-  description: string;
-  videos: Video[];
-};
-
 type CategoryFilter = ContentCategory | "All" | "Uncategorized";
 
 type CategoryFilterOption = {
   label: CategoryFilter;
   count: number;
 };
-
-function buildVideoSections(videos: Video[]): VideoSection[] {
-  const categorized = CONTENT_CATEGORIES.map((category) => ({
-    title: category,
-    description: CATEGORY_DESCRIPTIONS[category],
-    videos: videos.filter((video) => video.categories.includes(category)),
-  })).filter((section) => section.videos.length > 0);
-
-  const uncategorized = videos.filter((video) => video.categories.length === 0);
-
-  if (uncategorized.length === 0) return categorized;
-
-  return [
-    ...categorized,
-    {
-      title: "Uncategorized",
-      description: CATEGORY_DESCRIPTIONS.Uncategorized,
-      videos: uncategorized,
-    },
-  ];
-}
 
 function buildCategoryFilters(videos: Video[]): CategoryFilterOption[] {
   const categoryFilters = CONTENT_CATEGORIES.map((category) => ({
@@ -110,6 +85,11 @@ export default function HomePage(): ReactElement {
     queryKey: ["queue"],
     queryFn: getQueue,
   });
+  const { data: profiles, isLoading: isProfilesLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: getProfiles,
+  });
+  const activeProfile = useActiveChildProfile(profiles?.childProfiles);
   const visible = useMemo(
     () =>
       videos
@@ -117,19 +97,25 @@ export default function HomePage(): ReactElement {
         : { videos: [], isQueueActive: false },
     [queue, videos],
   );
-  const sections = useMemo(
-    () => buildVideoSections(visible.videos),
-    [visible.videos],
+  const profileVideos = useMemo(
+    () => filterVideosForProfile(visible.videos, activeProfile),
+    [activeProfile, visible.videos],
   );
   const categoryFilters = useMemo(
-    () => buildCategoryFilters(visible.videos),
-    [visible.videos],
+    () => buildCategoryFilters(profileVideos),
+    [profileVideos],
   );
   const filteredVideos = useMemo(
-    () => filterVideos(visible.videos, selectedCategory),
-    [selectedCategory, visible.videos],
+    () => filterVideos(profileVideos, selectedCategory),
+    [profileVideos, selectedCategory],
   );
-  const isPageLoading = isLoading || isQueueLoading;
+  const isPageLoading = isLoading || isQueueLoading || isProfilesLoading;
+
+  useEffect(() => {
+    if (categoryFilters.some((option) => option.label === selectedCategory)) return;
+    setSelectedCategory("All");
+  }, [categoryFilters, selectedCategory]);
+
   const playCategory = (categoryVideos: Video[]): void => {
     const firstVideo = categoryVideos[0];
     if (!firstVideo) return;
@@ -139,67 +125,252 @@ export default function HomePage(): ReactElement {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-20 pt-4 md:pt-6">
+    <main className="mx-auto max-w-[1500px] px-4 pb-10 pt-4 md:px-6 md:pt-6">
       <TopNav />
 
-      <Hero count={visible.videos.length} isQueueActive={visible.isQueueActive} />
-
-      {isPageLoading && <VideoGridSkeleton />}
-
-      {!isPageLoading && videos && visible.videos.length === 0 && (
-        <Alert className="mx-auto max-w-lg rounded-3xl border-2 border-dashed border-primary/30 bg-card/90 p-6 shadow-xl backdrop-blur-sm">
-          <Clapperboard className="size-5 text-primary" />
-          <AlertTitle className="font-display text-base">No videos yet</AlertTitle>
-          <AlertDescription className="text-muted-foreground">
-            Ask a grown-up to open Admin and import a playlist or add videos one
-            by one.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!isPageLoading && videos && visible.videos.length > 0 ? (
-        <section aria-labelledby="videos-heading" className="mt-2">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <div>
-              <h2
-                id="videos-heading"
-                className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl"
-              >
-                {visible.isQueueActive ? "Today's queue" : "Explore by category"}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {selectedCategory === "All"
-                  ? `${visible.videos.length} happy video${visible.videos.length === 1 ? "" : "s"} ready to play`
-                  : `${filteredVideos.length} video${filteredVideos.length === 1 ? "" : "s"} in ${selectedCategory}`}
-              </p>
-            </div>
-            <Badge
-              variant="secondary"
-              className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
-            >
-              <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
-              {visible.isQueueActive ? "parent-picked" : "hand-picked"}
-            </Badge>
-          </div>
-
-          <CategoryFilterBar
-            options={categoryFilters}
-            selected={selectedCategory}
-            onSelect={setSelectedCategory}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <section aria-labelledby="videos-heading" className="min-w-0">
+          <LibraryHeader
+            count={filteredVideos.length}
+            totalCount={profileVideos.length}
+            isQueueActive={visible.isQueueActive}
+            selectedCategory={selectedCategory}
+            onPlay={() => playCategory(filteredVideos)}
           />
 
-          {selectedCategory === "All" ? (
-            <CategorySections sections={sections} onPlay={playCategory} />
-          ) : (
-            <FilteredVideoGrid
-              category={selectedCategory}
-              videos={filteredVideos}
-              onPlay={playCategory}
+          {profileVideos.length > 0 && (
+            <CategoryFilterBar
+              options={categoryFilters}
+              selected={selectedCategory}
+              onSelect={setSelectedCategory}
             />
           )}
+
+          {isPageLoading && <VideoGridSkeleton />}
+
+          {!isPageLoading && videos && profileVideos.length === 0 && (
+            <EmptyState hasVisibleVideos={visible.videos.length > 0} />
+          )}
+
+          {!isPageLoading && videos && profileVideos.length > 0 && (
+            <VideoCardGrid videos={filteredVideos} />
+          )}
         </section>
-      ) : null}
+
+        <HomeSidebar
+          profiles={profiles?.childProfiles ?? []}
+          activeProfile={activeProfile}
+          totalCount={profileVideos.length}
+          filteredCount={filteredVideos.length}
+          selectedCategory={selectedCategory}
+          isQueueActive={visible.isQueueActive}
+        />
+      </div>
     </main>
+  );
+}
+
+function LibraryHeader({
+  count,
+  totalCount,
+  isQueueActive,
+  selectedCategory,
+  onPlay,
+}: {
+  count: number;
+  totalCount: number;
+  isQueueActive: boolean;
+  selectedCategory: CategoryFilter;
+  onPlay: () => void;
+}): ReactElement {
+  const title =
+    selectedCategory === "All"
+      ? isQueueActive
+        ? "Today's queue"
+        : "All videos"
+      : selectedCategory;
+  const subtitle =
+    selectedCategory === "All"
+      ? `${totalCount} happy video${totalCount === 1 ? "" : "s"} ready to play`
+      : `${count} video${count === 1 ? "" : "s"} tagged ${selectedCategory}`;
+
+  return (
+    <header className="mb-4 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <Badge
+          variant="secondary"
+          className="mb-3 gap-2 rounded-full border-0 bg-white/75 px-3.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
+        >
+          <Sparkles className="size-3.5" aria-hidden />
+          {isQueueActive ? "parent-picked queue" : "kid-safe library"}
+        </Badge>
+        <h1
+          id="videos-heading"
+          className="font-display text-3xl font-bold tracking-tight text-[color:var(--tots-ink)] md:text-4xl"
+        >
+          {title}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onPlay}
+        disabled={count === 0}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-4 py-2.5 text-sm font-semibold text-[color:var(--tots-cream)] shadow-sm transition",
+          "hover:-translate-y-0.5 hover:brightness-110 disabled:pointer-events-none disabled:opacity-45",
+          "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
+        )}
+      >
+        <Play className="size-4 fill-current" aria-hidden />
+        Play all
+      </button>
+    </header>
+  );
+}
+
+function EmptyState({
+  hasVisibleVideos,
+}: {
+  hasVisibleVideos: boolean;
+}): ReactElement {
+  return (
+    <Alert className="mx-auto mt-10 max-w-lg rounded-3xl border-2 border-dashed border-primary/30 bg-card/90 p-6 shadow-xl backdrop-blur-sm">
+      <Clapperboard className="size-5 text-primary" />
+      <AlertTitle className="font-display text-base">
+        {hasVisibleVideos ? "No profile matches" : "No videos yet"}
+      </AlertTitle>
+      <AlertDescription className="text-muted-foreground">
+        {hasVisibleVideos
+          ? "Ask a grown-up to add more preferred categories for this profile."
+          : "Ask a grown-up to open Admin and import a playlist or add videos one by one."}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+function HomeSidebar({
+  profiles,
+  activeProfile,
+  totalCount,
+  filteredCount,
+  selectedCategory,
+  isQueueActive,
+}: {
+  profiles: ChildProfile[];
+  activeProfile: ChildProfile | null;
+  totalCount: number;
+  filteredCount: number;
+  selectedCategory: CategoryFilter;
+  isQueueActive: boolean;
+}): ReactElement {
+  return (
+    <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <section className="overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/tots-brand-kit/svg/tots-icon-transparent.svg"
+            alt=""
+            aria-hidden
+            className="size-14 shrink-0"
+          />
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              {isQueueActive ? "Today only" : "Ready now"}
+            </p>
+            <h2 className="font-display text-xl font-bold leading-tight text-[color:var(--tots-ink)]">
+              {filteredCount} of {totalCount} videos
+            </h2>
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {selectedCategory === "All"
+            ? "Pick any thumbnail to start watching."
+            : `Showing videos tagged ${selectedCategory}.`}
+        </p>
+      </section>
+
+      <ProfileSelector profiles={profiles} activeProfile={activeProfile} />
+
+      <WatchTimerCard />
+
+      <Link
+        href="/admin"
+        className={cn(
+          "flex items-center justify-between rounded-[1.5rem] border border-white/60 bg-white/70 px-4 py-3 text-sm font-semibold text-foreground shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl transition",
+          "hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_-24px_rgba(61,61,92,0.42)]",
+        )}
+      >
+        <span className="inline-flex items-center gap-2">
+          <Settings2 className="size-4 text-[color:var(--tots-ink)]" />
+          Parents panel
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
+    </aside>
+  );
+}
+
+function ProfileSelector({
+  profiles,
+  activeProfile,
+}: {
+  profiles: ChildProfile[];
+  activeProfile: ChildProfile | null;
+}): ReactElement | null {
+  if (profiles.length === 0) return null;
+
+  return (
+    <section
+      aria-label="Choose child profile"
+      className="rounded-[1.75rem] border border-white/60 bg-white/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl"
+    >
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Baby className="size-4 text-[color:var(--tots-ink)]" aria-hidden />
+        Watching as
+      </div>
+      <div className="grid gap-2">
+        {profiles.map((profile) => {
+          const selected = profile.id === activeProfile?.id;
+          const categories =
+            profile.preferredCategories.length > 0
+              ? profile.preferredCategories.join(", ")
+              : "All categories";
+
+          return (
+            <button
+              key={profile.id}
+              type="button"
+              onClick={() => setActiveChildProfileId(profile.id)}
+              className={cn(
+                "rounded-2xl px-4 py-3 text-left shadow-sm ring-1 ring-black/[0.04] transition",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
+                selected
+                  ? "bg-[color:var(--tots-ink)] text-[color:var(--tots-cream)]"
+                  : "bg-white/80 text-foreground hover:-translate-y-0.5 hover:bg-white",
+              )}
+              aria-pressed={selected}
+            >
+              <span className="block font-display text-base font-bold">
+                {profile.name}
+              </span>
+              <span
+                className={cn(
+                  "mt-0.5 block text-xs",
+                  selected
+                    ? "text-[color:var(--tots-cream)]/75"
+                    : "text-muted-foreground",
+                )}
+              >
+                {profile.ageRange || "No age range"} · {categories}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -214,7 +385,7 @@ function CategoryFilterBar({
 }): ReactElement {
   return (
     <div
-      className="mb-8 -mx-4 overflow-x-auto px-4 pb-2"
+      className="sticky top-2 z-20 -mx-4 mb-5 overflow-x-auto px-4 pb-2 pt-1"
       aria-label="Filter videos by category"
     >
       <div className="flex min-w-max gap-2">
@@ -254,125 +425,15 @@ function CategoryFilterBar({
   );
 }
 
-function CategorySections({
-  sections,
-  onPlay,
-}: {
-  sections: VideoSection[];
-  onPlay: (videos: Video[]) => void;
-}): ReactElement {
-  return (
-    <div className="space-y-10">
-      {sections.map((section, sectionIndex) => {
-        const headingId = `category-${section.title
-          .toLowerCase()
-          .replace(/\s+/g, "-")}`;
-
-        return (
-          <section key={section.title} aria-labelledby={headingId}>
-            <CategorySectionHeader
-              id={headingId}
-              title={section.title}
-              description={section.description}
-              count={section.videos.length}
-              onPlay={() => onPlay(section.videos)}
-            />
-
-            <VideoCardGrid videos={section.videos} indexOffset={sectionIndex} />
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function FilteredVideoGrid({
-  category,
-  videos,
-  onPlay,
-}: {
-  category: CategoryFilter;
-  videos: Video[];
-  onPlay: (videos: Video[]) => void;
-}): ReactElement {
-  return (
-    <section aria-labelledby="filtered-videos-heading">
-      <CategorySectionHeader
-        id="filtered-videos-heading"
-        title={category}
-        description={CATEGORY_DESCRIPTIONS[category]}
-        count={videos.length}
-        onPlay={() => onPlay(videos)}
-      />
-      <VideoCardGrid videos={videos} indexOffset={0} />
-    </section>
-  );
-}
-
-function CategorySectionHeader({
-  id,
-  title,
-  description,
-  count,
-  onPlay,
-}: {
-  id: string;
-  title: string;
-  description: string;
-  count: number;
-  onPlay: () => void;
-}): ReactElement {
-  return (
-    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h3
-          id={id}
-          className="font-display text-xl font-bold tracking-tight text-foreground md:text-2xl"
-        >
-          {title}
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Badge
-          variant="secondary"
-          className="rounded-full bg-white/70 px-3 py-1 text-xs"
-        >
-          {count} video{count === 1 ? "" : "s"}
-        </Badge>
-        <button
-          type="button"
-          onClick={onPlay}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-[color:var(--tots-ink)] px-3 py-1.5 text-xs font-semibold text-[color:var(--tots-cream)] shadow-sm transition",
-            "hover:-translate-y-0.5 hover:brightness-110",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
-          )}
-          aria-label={`Play ${title} queue`}
-        >
-          <Play className="size-3.5 fill-current" aria-hidden />
-          Play
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function VideoCardGrid({
   videos,
-  indexOffset,
 }: {
   videos: Video[];
-  indexOffset: number;
 }): ReactElement {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
       {videos.map((video, idx) => (
-        <VideoCard
-          key={video.id}
-          video={video}
-          index={idx + indexOffset}
-        />
+        <VideoCard key={video.id} video={video} index={idx} />
       ))}
     </div>
   );
@@ -388,6 +449,10 @@ function VideoCard({
   const ytId = extractVideoId(video.videoUrl);
   const thumb = video.thumbnailUrl ?? (ytId ? thumbnailFor(ytId) : null);
   const tone = PASTELS[index % PASTELS.length];
+  const categories =
+    video.categories.length > 0 ? video.categories : ["Uncategorized"];
+  const visibleCategories = categories.slice(0, 2);
+  const hiddenCategoryCount = categories.length - visibleCategories.length;
 
   return (
     <Link
@@ -402,12 +467,12 @@ function VideoCard({
     >
       <article
         className={cn(
-          "relative h-full overflow-hidden rounded-[2rem] bg-white p-2.5 shadow-[0_18px_40px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
-          "group-hover:shadow-[0_28px_50px_-18px_rgba(80,90,160,0.45)]",
+          "relative h-full overflow-hidden rounded-[1.5rem] bg-white/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
+          "group-hover:bg-white group-hover:shadow-[0_24px_46px_-20px_rgba(80,90,160,0.45)]",
         )}
       >
         <div
-          className="relative aspect-video overflow-hidden rounded-[1.4rem]"
+          className="relative aspect-video overflow-hidden rounded-[1.1rem]"
           style={{
             backgroundColor: "var(--pastel-blue)",
             background: `linear-gradient(135deg, ${tone.bg}, color-mix(in oklch, ${tone.bg} 60%, white))`,
@@ -426,6 +491,22 @@ function VideoCard({
             </div>
           )}
 
+          <div className="absolute left-2 right-10 top-2 flex flex-wrap gap-1">
+            {visibleCategories.map((category) => (
+              <span
+                key={category}
+                className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[color:var(--tots-ink)] shadow-sm backdrop-blur"
+              >
+                {category}
+              </span>
+            ))}
+            {hiddenCategoryCount > 0 && (
+              <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[color:var(--tots-ink)] shadow-sm backdrop-blur">
+                +{hiddenCategoryCount}
+              </span>
+            )}
+          </div>
+
           <div className="absolute inset-0 grid place-items-center">
             <span
               className={cn(
@@ -443,7 +524,7 @@ function VideoCard({
           </div>
 
           <span
-            className="absolute -right-1 -top-1 grid size-10 place-items-center rounded-full bg-white text-lg shadow-lg ring-2 ring-white/80 transition-transform duration-500 group-hover:rotate-12 md:size-11 md:text-xl"
+            className="absolute -right-1 -top-1 grid size-9 place-items-center rounded-full bg-white text-base shadow-lg ring-2 ring-white/80 transition-transform duration-500 group-hover:rotate-12 md:size-10 md:text-lg"
             aria-hidden
           >
             {tone.emoji}
@@ -464,103 +545,26 @@ function TopNav(): ReactElement {
   return (
     <div className="mb-5 flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:mb-6 md:px-4 md:py-3">
       <BrandLogo size="md" />
-      <Link
-        href="/admin"
-        className={cn(
-          "inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition",
-          "hover:-translate-y-0.5 hover:bg-white hover:shadow-md",
-        )}
+      <Badge
+        variant="secondary"
+        className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
       >
-        <Settings2 className="size-4 text-[color:var(--tots-ink)]" />
-        <span className="hidden sm:inline">Parents</span>
-      </Link>
+        <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
+        Pick a happy show
+      </Badge>
     </div>
-  );
-}
-
-function Hero({
-  count,
-  isQueueActive,
-}: {
-  count: number;
-  isQueueActive: boolean;
-}): ReactElement {
-  return (
-    <header className="relative mb-7 overflow-hidden rounded-[2rem] border border-white/60 bg-white/55 px-5 py-7 shadow-[0_24px_56px_-22px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:mb-8 md:px-10 md:py-10">
-      {/* decorative pastel blobs */}
-      <div className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-[color:var(--tots-sunshine)] opacity-70 blur-3xl md:size-72" />
-      <div className="pointer-events-none absolute -bottom-24 -left-10 size-56 rounded-full bg-[color:var(--tots-mint)] opacity-70 blur-3xl md:size-72" />
-      <div className="pointer-events-none absolute right-1/4 -bottom-16 size-44 rounded-full bg-[color:var(--tots-lavender)] opacity-60 blur-3xl" />
-
-      {/* hero teddy peek — official Tots character, only on md+ */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/tots-brand-kit/svg/tots-icon-transparent.svg"
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute -right-3 bottom-3 hidden size-32 animate-float-slow opacity-95 md:block lg:size-40"
-      />
-
-      {/* floating sticker emojis */}
-      <span
-        className="pointer-events-none absolute right-6 top-6 hidden text-3xl animate-float-slow md:block"
-        aria-hidden
-      >
-        ☁️
-      </span>
-      <span
-        className="pointer-events-none absolute right-20 bottom-8 hidden text-2xl animate-float-slower md:block"
-        aria-hidden
-      >
-        ⭐
-      </span>
-      <span
-        className="pointer-events-none absolute left-8 top-10 hidden text-2xl animate-float-slower md:block"
-        aria-hidden
-      >
-        🎈
-      </span>
-
-      <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-        <Badge
-          variant="secondary"
-          className="mb-4 gap-2 rounded-full border-0 bg-white/85 px-3.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
-        >
-          <Sparkles className="size-3.5" aria-hidden />
-          {count > 0
-            ? `${count} ${isQueueActive ? "queued" : "shows ready"}`
-            : "Welcome"}
-        </Badge>
-
-        <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-[color:var(--tots-ink)] md:text-4xl lg:text-5xl">
-          Hi little star{" "}
-          <span className="inline-block animate-wave" aria-hidden>
-            👋
-          </span>
-          <br className="hidden sm:block" />
-          let&apos;s watch something{" "}
-          <span className="bg-[image:var(--tots-grad-sky-lavender)] bg-clip-text text-transparent">
-            magical
-          </span>
-        </h1>
-
-        <p className="mx-auto mt-4 max-w-md text-pretty text-sm text-muted-foreground md:text-base">
-          Tap a happy bubble below — your show plays full screen on the next page.
-        </p>
-      </div>
-    </header>
   );
 }
 
 function VideoGridSkeleton(): ReactElement {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-[2rem] bg-white p-2.5 shadow-[0_18px_40px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04]"
+          className="overflow-hidden rounded-[1.5rem] bg-white/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04]"
         >
-          <Skeleton className="aspect-video w-full rounded-[1.4rem]" />
+          <Skeleton className="aspect-video w-full rounded-[1.1rem]" />
           <div className="space-y-2 px-1 pb-1 pt-3">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/5" />

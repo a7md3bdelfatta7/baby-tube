@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlarmClock,
+  Baby,
   House,
   ListMusic,
   ListVideo,
@@ -16,16 +17,19 @@ import {
 import {
   createVideo,
   deleteVideo,
+  getProfiles,
   getSettings,
   getQueue,
   importPlaylist,
   listVideos,
   updateQueue,
+  updateProfiles,
   updateSettings,
   updateVideo,
 } from "@/lib/api";
-import type { Video } from "@/db/schema";
+import type { ChildProfile, Video } from "@/db/schema";
 import { CONTENT_CATEGORIES } from "@/lib/categories";
+import { createProfileId } from "@/lib/profiles";
 import { orderVideosForQueue } from "@/lib/queue";
 import {
   AlertDialog,
@@ -52,7 +56,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type Tab = "list" | "queue" | "settings" | "add" | "playlist";
+type Tab = "list" | "queue" | "profiles" | "settings" | "add" | "playlist";
 
 export function AdminPanel(): ReactElement {
   const [tab, setTab] = useState<Tab>("list");
@@ -87,6 +91,13 @@ export function AdminPanel(): ReactElement {
             Settings
           </TabsTrigger>
           <TabsTrigger
+            value="profiles"
+            className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
+          >
+            <Baby className="size-4" />
+            Profiles
+          </TabsTrigger>
+          <TabsTrigger
             value="add"
             className="gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]"
           >
@@ -101,15 +112,6 @@ export function AdminPanel(): ReactElement {
             Playlist
           </TabsTrigger>
         </TabsList>
-        <Button
-          render={<Link href="/" />}
-          variant="outline"
-          size="default"
-          className="shrink-0 gap-2 rounded-full bg-white/80 sm:self-center"
-        >
-          <House className="size-4" data-icon="inline-start" />
-          Home
-        </Button>
       </div>
 
       <TabsContent value="list" className="mt-0 outline-none">
@@ -120,6 +122,9 @@ export function AdminPanel(): ReactElement {
       </TabsContent>
       <TabsContent value="settings" className="mt-0 outline-none">
         <SettingsPanel />
+      </TabsContent>
+      <TabsContent value="profiles" className="mt-0 outline-none">
+        <ProfilesPanel />
       </TabsContent>
       <TabsContent value="add" className="mt-0 outline-none">
         <AddVideos />
@@ -578,6 +583,281 @@ function SettingsPanel(): ReactElement {
             {(m.error as Error)?.message ?? "Save failed"}
           </p>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+type ProfileForm = {
+  id: string;
+  name: string;
+  ageRange: string;
+  screenTimeMinutes: string;
+  screenTimeResetHours: string;
+  preferredCategories: string[];
+  watchHistory: ChildProfile["watchHistory"];
+};
+
+function toProfileForm(profile: ChildProfile): ProfileForm {
+  return {
+    id: profile.id,
+    name: profile.name,
+    ageRange: profile.ageRange,
+    screenTimeMinutes: String(profile.screenTimeMinutes),
+    screenTimeResetHours: String(profile.screenTimeResetHours ?? 24),
+    preferredCategories: profile.preferredCategories,
+    watchHistory: profile.watchHistory,
+  };
+}
+
+function toChildProfile(profile: ProfileForm): ChildProfile {
+  return {
+    id: profile.id,
+    name: profile.name.trim(),
+    ageRange: profile.ageRange.trim(),
+    screenTimeMinutes: Number(profile.screenTimeMinutes),
+    screenTimeResetHours: Number(profile.screenTimeResetHours),
+    preferredCategories: profile.preferredCategories,
+    watchHistory: profile.watchHistory,
+  };
+}
+
+function isValidProfile(profile: ProfileForm): boolean {
+  const minutes = Number(profile.screenTimeMinutes);
+  const resetHours = Number(profile.screenTimeResetHours);
+
+  return (
+    profile.name.trim().length > 0 &&
+    Number.isInteger(minutes) &&
+    minutes >= 1 &&
+    minutes <= 180 &&
+    Number.isInteger(resetHours) &&
+    resetHours >= 1 &&
+    resetHours <= 168
+  );
+}
+
+function ProfilesPanel(): ReactElement {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: getProfiles,
+  });
+  const [profiles, setProfiles] = useState<ProfileForm[]>([]);
+  const canSave = profiles.every(isValidProfile);
+
+  useEffect(() => {
+    if (!data) return;
+    setProfiles(data.childProfiles.map(toProfileForm));
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      updateProfiles({ childProfiles: profiles.map(toChildProfile) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["profiles"] }),
+  });
+
+  const updateProfile = (id: string, patch: Partial<ProfileForm>): void => {
+    setProfiles((items) =>
+      items.map((profile) =>
+        profile.id === id ? { ...profile, ...patch } : profile,
+      ),
+    );
+  };
+
+  const addProfile = (): void => {
+    setProfiles((items) => [
+      ...items,
+      {
+        id: createProfileId(),
+        name: "",
+        ageRange: "",
+        screenTimeMinutes: "15",
+        screenTimeResetHours: "24",
+        preferredCategories: [],
+        watchHistory: [],
+      },
+    ]);
+  };
+
+  const removeProfile = (id: string): void => {
+    setProfiles((items) => items.filter((profile) => profile.id !== id));
+  };
+
+  return (
+    <Card className="rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md">
+      <CardHeader>
+        <CardTitle>Child profiles</CardTitle>
+        <CardDescription>
+          Give each child their own timer, favorite categories, age range, and
+          recent watch history.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <p className="py-8 text-center text-muted-foreground">
+            Loading profiles…
+          </p>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {profiles.map((profile) => {
+                const minutes = Number(profile.screenTimeMinutes);
+                const resetHours = Number(profile.screenTimeResetHours);
+                const isValidMinutes =
+                  Number.isInteger(minutes) && minutes >= 1 && minutes <= 180;
+                const isValidResetHours =
+                  Number.isInteger(resetHours) &&
+                  resetHours >= 1 &&
+                  resetHours <= 168;
+
+                return (
+                  <Card
+                    key={profile.id}
+                    className="rounded-2xl bg-white/70 shadow-none ring-1 ring-black/[0.04]"
+                  >
+                    <CardContent className="space-y-4 pt-6">
+                      <div className="grid gap-3 md:grid-cols-4">
+                        <Input
+                          placeholder="Child name"
+                          value={profile.name}
+                          onChange={(e) =>
+                            updateProfile(profile.id, { name: e.target.value })
+                          }
+                          aria-invalid={!profile.name.trim() ? true : undefined}
+                        />
+                        <Input
+                          placeholder="Age range, e.g. 3-5"
+                          value={profile.ageRange}
+                          onChange={(e) =>
+                            updateProfile(profile.id, {
+                              ageRange: e.target.value,
+                            })
+                          }
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={180}
+                          step={1}
+                          placeholder="Minutes"
+                          value={profile.screenTimeMinutes}
+                          onChange={(e) =>
+                            updateProfile(profile.id, {
+                              screenTimeMinutes: e.target.value,
+                            })
+                          }
+                          aria-invalid={!isValidMinutes ? true : undefined}
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          max={168}
+                          step={1}
+                          placeholder="Reset every hours"
+                          value={profile.screenTimeResetHours}
+                          onChange={(e) =>
+                            updateProfile(profile.id, {
+                              screenTimeResetHours: e.target.value,
+                            })
+                          }
+                          aria-invalid={!isValidResetHours ? true : undefined}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Timer reset interval is in hours. Use 24 for a daily reset.
+                      </p>
+
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          Preferred categories
+                        </p>
+                        <CategoryPicker
+                          value={profile.preferredCategories}
+                          onChange={(preferredCategories) =>
+                            updateProfile(profile.id, { preferredCategories })
+                          }
+                        />
+                      </div>
+
+                      <div className="rounded-2xl bg-muted/40 p-4">
+                        <p className="text-sm font-medium">Recent watch history</p>
+                        {profile.watchHistory.length > 0 ? (
+                          <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                            {profile.watchHistory.slice(0, 5).map((entry) => (
+                              <li key={`${entry.videoId}-${entry.watchedAt}`}>
+                                {entry.title} ·{" "}
+                                {new Date(entry.watchedAt).toLocaleDateString()}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            No watched videos yet.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => removeProfile(profile.id)}
+                        >
+                          <Trash2 className="size-3.5" data-icon="inline-start" />
+                          Remove profile
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {profiles.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-white/60 p-5 text-center text-sm text-muted-foreground">
+                  No profiles yet. Add one to personalize the child experience.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={addProfile}
+                className="rounded-full"
+              >
+                <Plus className="size-4" data-icon="inline-start" />
+                Add profile
+              </Button>
+              <Button
+                type="button"
+                onClick={() => save.mutate()}
+                disabled={!canSave || save.isPending}
+                className="rounded-full"
+              >
+                {save.isPending ? "Saving…" : "Save profiles"}
+              </Button>
+            </div>
+
+            {!canSave ? (
+              <p className="text-sm text-destructive">
+                Each profile needs a name, a whole-number timer from 1 to 180
+                minutes, and a reset interval from 1 to 168 hours.
+              </p>
+            ) : null}
+            {save.isSuccess ? (
+              <p className="text-sm text-emerald-600">Profiles saved.</p>
+            ) : null}
+            {save.isError ? (
+              <p className="text-sm text-destructive">
+                {(save.error as Error)?.message ?? "Save failed"}
+              </p>
+            ) : null}
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -22,6 +22,47 @@ export const settingsInput = z.object({
   screenTimeMinutes: z.number().int().min(1).max(180),
 });
 
+export const watchHistoryEntryInput = z.object({
+  videoId: z.number().int().positive(),
+  title: z.string().min(1).max(500),
+  watchedAt: z.string().datetime(),
+});
+
+export const childProfileInput = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(80),
+  ageRange: z.string().max(80).default(""),
+  screenTimeMinutes: z.number().int().min(1).max(180),
+  screenTimeResetHours: z.number().int().min(1).max(168).default(24),
+  preferredCategories: z
+    .array(z.enum(CONTENT_CATEGORIES))
+    .max(CONTENT_CATEGORIES.length)
+    .default([])
+    .transform((categories) => normalizeCategories(categories)),
+  watchHistory: z.array(watchHistoryEntryInput).max(25).default([]),
+});
+
+export const profilesInput = z.object({
+  childProfiles: z
+    .array(childProfileInput)
+    .max(12)
+    .transform((profiles) => {
+      const seen = new Set<string>();
+
+      return profiles.filter((profile) => {
+        if (seen.has(profile.id)) return false;
+        seen.add(profile.id);
+        return true;
+      });
+    }),
+});
+
+export const watchHistoryInput = z.object({
+  profileId: z.string().min(1).max(80),
+  videoId: z.number().int().positive(),
+  title: z.string().min(1).max(500),
+});
+
 export const queueInput = z.object({
   queueVideoIds: z
     .array(z.number().int().positive())
@@ -32,3 +73,5 @@ export const queueInput = z.object({
 export type VideoInput = z.infer<typeof videoInput>;
 export type SettingsInput = z.infer<typeof settingsInput>;
 export type QueueInput = z.infer<typeof queueInput>;
+export type ProfilesInput = z.infer<typeof profilesInput>;
+export type WatchHistoryInput = z.infer<typeof watchHistoryInput>;

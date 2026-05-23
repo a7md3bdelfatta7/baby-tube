@@ -1,14 +1,15 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useMemo, useState } from "react";
 import { ArrowLeft, Home, SkipForward } from "lucide-react";
 import { BreakModeScreen } from "@/components/BreakModeScreen";
 import { Player } from "@/components/Player";
-import { getQueue, listVideos } from "@/lib/api";
+import { getProfiles, getQueue, listVideos, recordWatchHistory } from "@/lib/api";
+import { useActiveChildProfile } from "@/lib/profiles";
 import { getSessionPlaybackQueue, getVisibleVideos } from "@/lib/queue";
 import { useWatchTimer } from "@/lib/timer-store";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
@@ -34,6 +35,7 @@ export default function WatchPage({
   const { id } = use(params);
   const { queue: queueMode } = use(searchParams);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { expired } = useWatchTimer();
   const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
   const useSessionQueue = queueMode === "session";
@@ -45,6 +47,15 @@ export default function WatchPage({
   const { data: queue, isLoading: isQueueLoading } = useQuery({
     queryKey: ["queue"],
     queryFn: getQueue,
+  });
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: getProfiles,
+  });
+  const activeProfile = useActiveChildProfile(profiles?.childProfiles);
+  const history = useMutation({
+    mutationFn: recordWatchHistory,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profiles"] }),
   });
 
   const { current, currentIdx, next, prev, isLast, isQueueActive } = useMemo(() => {
@@ -79,6 +90,10 @@ export default function WatchPage({
   }, [id, queue, sessionQueueIds, useSessionQueue, videos]);
 
   const goNext = (): void => {
+    if (current && activeProfile) {
+      history.mutate({ profileId: activeProfile.id, video: current });
+    }
+
     const queueSuffix = useSessionQueue ? "?queue=session" : "";
     if (next) router.push(`/watch/${next.id}${queueSuffix}`);
     else router.push("/");

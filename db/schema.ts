@@ -31,8 +31,28 @@ export const appSettings = pgTable("app_settings", {
     .$type<number[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  childProfiles: jsonb("child_profiles")
+    .$type<ChildProfile[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
 });
 
 export type Video = typeof videos.$inferSelect;
 export type NewVideo = typeof videos.$inferInsert;
 export type AppSettings = typeof appSettings.$inferSelect;
+
+export type WatchHistoryEntry = {
+  videoId: number;
+  title: string;
+  watchedAt: string;
+};
+
+export type ChildProfile = {
+  id: string;
+  name: string;
+  ageRange: string;
+  screenTimeMinutes: number;
+  screenTimeResetHours: number;
+  preferredCategories: string[];
+  watchHistory: WatchHistoryEntry[];
+};

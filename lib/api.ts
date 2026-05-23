@@ -1,7 +1,8 @@
 "use client";
 
-import type { AppSettings, Video } from "@/db/schema";
+import type { AppSettings, ChildProfile, Video } from "@/db/schema";
 import type { QueueState } from "@/lib/queue";
+import type { ProfilesState } from "@/lib/profiles";
 
 function adminHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -89,5 +90,38 @@ export async function updateSettings(input: {
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error((await res.json()).error?.message ?? "Failed");
+  return res.json();
+}
+
+export async function getProfiles(): Promise<ProfilesState> {
+  const res = await fetch("/api/profiles", { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load profiles");
+  return res.json();
+}
+
+export async function updateProfiles(input: ProfilesState): Promise<ProfilesState> {
+  const res = await fetch("/api/profiles", {
+    method: "PATCH",
+    headers: { "content-type": "application/json", ...adminHeaders() },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error((await res.json()).error?.message ?? "Failed");
+  return res.json();
+}
+
+export async function recordWatchHistory(input: {
+  profileId: string;
+  video: Pick<Video, "id" | "title">;
+}): Promise<ProfilesState> {
+  const res = await fetch("/api/profiles/watch-history", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      profileId: input.profileId,
+      videoId: input.video.id,
+      title: input.video.title,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to record watch history");
   return res.json();
 }
