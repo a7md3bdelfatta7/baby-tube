@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useMemo, useState } from "react";
 import { ArrowLeft, Home, SkipForward } from "lucide-react";
+import { BreakModeScreen } from "@/components/BreakModeScreen";
 import { Player } from "@/components/Player";
 import { getQueue, listVideos } from "@/lib/api";
 import { getSessionPlaybackQueue, getVisibleVideos } from "@/lib/queue";
@@ -176,17 +177,7 @@ export default function WatchPage({
         </span>
 
         {expired ? (
-          <div className="grid aspect-video place-content-center rounded-[1.4rem] border-2 border-dashed border-[color:var(--primary)]/30 bg-white/70">
-            <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-              <span className="text-6xl leading-none animate-float-slow" aria-hidden>
-                💤
-              </span>
-              <h3 className="font-display text-3xl font-bold">Time&apos;s up</h3>
-              <p className="max-w-xs text-base text-muted-foreground">
-                Time for a little break. Come back later for more cuddly shows.
-              </p>
-            </div>
-          </div>
+          <BreakModeScreen />
         ) : (
           <div className="overflow-hidden rounded-[1.4rem]">
             <Player
