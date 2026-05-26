@@ -22,7 +22,8 @@ type Props = {
   videoUrl: string;
   startSeconds?: number | null;
   endSeconds?: number | null;
-  onEnded: () => void;
+  onEnded: (status: "completed" | "skipped", watchedSeconds: number) => void;
+  onProgress?: (watchedSeconds: number) => void;
 };
 
 function formatTime(seconds: number): string {
@@ -38,6 +39,7 @@ export function Player({
   startSeconds,
   endSeconds,
   onEnded,
+  onProgress,
 }: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -91,6 +93,9 @@ export function Player({
     );
   }
 
+  const watchedSecondsFor = (currentTime: number): number =>
+    Math.max(0, Math.round(currentTime - (startSeconds ?? 0)));
+
   const updatePlaybackProgress = (): void => {
     const player = playerRef.current;
     if (!player) return;
@@ -101,6 +106,7 @@ export function Player({
 
       if (typeof currentTime === "number") {
         setCurrentSeconds(currentTime);
+        onProgress?.(watchedSecondsFor(currentTime));
       }
 
       if (typeof duration === "number" && duration > 0) {
@@ -109,6 +115,19 @@ export function Player({
     } catch {
       /* player API may throw while tearing down */
     }
+  };
+
+  const watchedSeconds = (): number => {
+    try {
+      const currentTime = playerRef.current?.getCurrentTime?.();
+      if (typeof currentTime === "number") {
+        return watchedSecondsFor(currentTime);
+      }
+    } catch {
+      /* player API may throw while tearing down */
+    }
+
+    return watchedSecondsFor(currentSeconds);
   };
 
   const startEnforced = (): void => {
@@ -123,7 +142,7 @@ export function Player({
           if (!endedRef.current) {
             endedRef.current = true;
             timerStore.setPlaying(false);
-            onEnded();
+            onEnded("completed", watchedSeconds());
           }
         }
       } catch {
@@ -166,7 +185,7 @@ export function Player({
       if (s === 0) {
         if (!endedRef.current) {
           endedRef.current = true;
-          onEnded();
+          onEnded("completed", watchedSeconds());
         }
       }
     }
@@ -177,7 +196,7 @@ export function Player({
     setTimeout(() => {
       if (!endedRef.current) {
         endedRef.current = true;
-        onEnded();
+        onEnded("skipped", watchedSeconds());
       }
     }, 1500);
   };
@@ -231,7 +250,7 @@ export function Player({
     } catch {
       /* player API may throw while tearing down */
     }
-    onEnded();
+    onEnded("skipped", watchedSeconds());
   };
 
   const toggleFullscreen = async (): Promise<void> => {
@@ -290,7 +309,7 @@ export function Player({
         onEnd={() => {
           if (!endedRef.current) {
             endedRef.current = true;
-            onEnded();
+            onEnded("completed", watchedSeconds());
           }
         }}
       />

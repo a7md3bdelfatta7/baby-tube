@@ -16,7 +16,11 @@ export const videoInput = z.object({
   endSeconds: z.number().int().min(0).nullable().optional(),
 });
 
-export const videoUpdate = videoInput.partial();
+export const videoUpdate = videoInput
+  .extend({
+    position: z.number().int().min(0).optional(),
+  })
+  .partial();
 
 export const settingsInput = z.object({
   screenTimeMinutes: z.number().int().min(1).max(180),
@@ -26,6 +30,8 @@ export const watchHistoryEntryInput = z.object({
   videoId: z.number().int().positive(),
   title: z.string().min(1).max(500),
   watchedAt: z.string().datetime(),
+  status: z.enum(["completed", "skipped"]).default("completed"),
+  watchedSeconds: z.number().int().min(0).max(24 * 60 * 60).default(0),
 });
 
 export const childProfileInput = z.object({
@@ -39,7 +45,7 @@ export const childProfileInput = z.object({
     .max(CONTENT_CATEGORIES.length)
     .default([])
     .transform((categories) => normalizeCategories(categories)),
-  watchHistory: z.array(watchHistoryEntryInput).max(25).default([]),
+  watchHistory: z.array(watchHistoryEntryInput).max(100).default([]),
 });
 
 export const profilesInput = z.object({
@@ -61,6 +67,8 @@ export const watchHistoryInput = z.object({
   profileId: z.string().min(1).max(80),
   videoId: z.number().int().positive(),
   title: z.string().min(1).max(500),
+  status: z.enum(["completed", "skipped"]),
+  watchedSeconds: z.number().int().min(0).max(24 * 60 * 60),
 });
 
 export const queueInput = z.object({

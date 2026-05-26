@@ -45,6 +45,8 @@ export type WatchHistoryEntry = {
   videoId: number;
   title: string;
   watchedAt: string;
+  status: "completed" | "skipped";
+  watchedSeconds: number;
 };
 
 export type ChildProfile = {

@@ -112,6 +112,8 @@ export async function updateProfiles(input: ProfilesState): Promise<ProfilesStat
 export async function recordWatchHistory(input: {
   profileId: string;
   video: Pick<Video, "id" | "title">;
+  status: "completed" | "skipped";
+  watchedSeconds: number;
 }): Promise<ProfilesState> {
   const res = await fetch("/api/profiles/watch-history", {
     method: "POST",
@@ -120,6 +122,8 @@ export async function recordWatchHistory(input: {
       profileId: input.profileId,
       videoId: input.video.id,
       title: input.video.title,
+      status: input.status,
+      watchedSeconds: input.watchedSeconds,
     }),
   });
   if (!res.ok) throw new Error("Failed to record watch history");

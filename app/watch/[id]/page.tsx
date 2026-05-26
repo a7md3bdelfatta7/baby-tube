@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Home, SkipForward } from "lucide-react";
 import { BreakModeScreen } from "@/components/BreakModeScreen";
 import { Player } from "@/components/Player";
@@ -38,6 +38,7 @@ export default function WatchPage({
   const queryClient = useQueryClient();
   const { expired } = useWatchTimer();
   const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
+  const [currentWatchedSeconds, setCurrentWatchedSeconds] = useState(0);
   const useSessionQueue = queueMode === "session";
 
   const { data: videos } = useQuery({
@@ -89,9 +90,21 @@ export default function WatchPage({
     };
   }, [id, queue, sessionQueueIds, useSessionQueue, videos]);
 
-  const goNext = (): void => {
+  useEffect(() => {
+    setCurrentWatchedSeconds(0);
+  }, [id]);
+
+  const goNext = (
+    status: "completed" | "skipped" = "skipped",
+    watchedSeconds = 0,
+  ): void => {
     if (current && activeProfile) {
-      history.mutate({ profileId: activeProfile.id, video: current });
+      history.mutate({
+        profileId: activeProfile.id,
+        video: current,
+        status,
+        watchedSeconds,
+      });
     }
 
     const queueSuffix = useSessionQueue ? "?queue=session" : "";
@@ -159,7 +172,7 @@ export default function WatchPage({
         </Link>
         <button
           type="button"
-          onClick={goNext}
+          onClick={() => goNext("skipped", currentWatchedSeconds)}
           className={cn(
             "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-5 py-2.5 text-sm font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 transition",
             "hover:-translate-y-0.5 hover:brightness-110",
@@ -201,6 +214,7 @@ export default function WatchPage({
               startSeconds={current.startSeconds}
               endSeconds={current.endSeconds}
               onEnded={goNext}
+              onProgress={setCurrentWatchedSeconds}
             />
           </div>
         )}

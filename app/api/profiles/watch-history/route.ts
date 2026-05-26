@@ -5,7 +5,7 @@ import { appSettings, type AppSettings, type ChildProfile } from "@/db/schema";
 import { profilesInput, watchHistoryInput } from "@/lib/validation";
 
 const SETTINGS_ID = 1;
-const MAX_HISTORY_ITEMS = 25;
+const MAX_HISTORY_ITEMS = 100;
 
 async function getOrCreateSettings(): Promise<AppSettings> {
   const [existing] = await db
@@ -38,6 +38,8 @@ function appendWatchHistory(
   profileId: string,
   videoId: number,
   title: string,
+  status: "completed" | "skipped",
+  watchedSeconds: number,
 ): ChildProfile[] {
   const watchedAt = new Date().toISOString();
 
@@ -47,8 +49,8 @@ function appendWatchHistory(
     return {
       ...profile,
       watchHistory: [
-        { videoId, title, watchedAt },
-        ...profile.watchHistory.filter((entry) => entry.videoId !== videoId),
+        { videoId, title, watchedAt, status, watchedSeconds },
+        ...profile.watchHistory,
       ].slice(0, MAX_HISTORY_ITEMS),
     };
   });
@@ -71,6 +73,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     parsed.data.profileId,
     parsed.data.videoId,
     parsed.data.title,
+    parsed.data.status,
+    parsed.data.watchedSeconds,
   );
 
   const [updated] = await db
