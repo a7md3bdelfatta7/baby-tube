@@ -155,8 +155,9 @@ export function Player({
     playerRef.current = e.target;
     setIsReady(true);
     try {
-      e.target.unMute();
+      e.target.mute();
       e.target.setVolume(80);
+      e.target.playVideo();
       const duration = e.target.getDuration?.();
       if (typeof duration === "number" && duration > 0) {
         setDurationSeconds(duration);
@@ -289,13 +290,14 @@ export function Player({
           width: "100%",
           height: "100%",
           playerVars: {
-            autoplay: 0,
+            autoplay: 1,
             controls: 0,
             rel: 0,
             modestbranding: 1,
             iv_load_policy: 3,
             disablekb: 1,
             fs: 0,
+            mute: 1,
             playsinline: 1,
             start: startSeconds ?? undefined,
             end: endSeconds ?? undefined,
