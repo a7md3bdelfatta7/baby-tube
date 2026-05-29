@@ -114,7 +114,7 @@ export default function WatchPage({
 
   if (!videos || isQueueLoading) {
     return (
-      <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 md:pt-8">
+      <main className="mx-auto max-w-7xl px-4 pb-20 pt-6 md:pt-8">
         <div className="space-y-5">
           <Skeleton className="h-14 w-full rounded-full" />
           <Skeleton className="aspect-video w-full rounded-[2rem]" />
@@ -157,7 +157,7 @@ export default function WatchPage({
   const tone = currentIdx >= 0 ? PASTELS[currentIdx % PASTELS.length] : PASTELS[0];
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 md:pt-8">
+    <main className="mx-auto max-w-7xl px-4 pb-20 pt-6 md:pt-8">
       {/* Top nav pill */}
       <div className="mb-6 flex items-center justify-between gap-3 rounded-full border border-white/60 bg-white/75 px-2 py-2 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:px-3">
         <Link
