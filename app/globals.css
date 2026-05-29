@@ -121,24 +121,24 @@ iframe {
     background-image:
       radial-gradient(
         ellipse 110% 70% at 50% -10%,
-        color-mix(in srgb, var(--tots-mint) 75%, transparent),
+        rgba(200, 239, 212, 0.75),
         transparent 60%
       ),
       radial-gradient(
         ellipse 90% 60% at 100% 30%,
-        color-mix(in srgb, var(--tots-lavender) 55%, transparent),
+        rgba(216, 199, 240, 0.55),
         transparent 60%
       ),
       radial-gradient(
         ellipse 90% 60% at 0% 70%,
-        color-mix(in srgb, var(--tots-peach) 60%, transparent),
+        rgba(255, 212, 186, 0.6),
         transparent 60%
       ),
       linear-gradient(
         170deg,
-        color-mix(in srgb, var(--tots-mint) 35%, white),
-        color-mix(in srgb, var(--tots-sunshine) 35%, white) 50%,
-        color-mix(in srgb, var(--tots-sky) 30%, white)
+        #eafbef,
+        #fff8df 50%,
+        #e5f4fc
       );
     background-attachment: fixed;
   }
@@ -233,29 +233,29 @@ iframe {
   background-image:
     radial-gradient(
       55% 45% at 12% 8%,
-      color-mix(in srgb, var(--tots-mint) 80%, transparent),
+      rgba(200, 239, 212, 0.8),
       transparent 70%
     ),
     radial-gradient(
       45% 40% at 92% 14%,
-      color-mix(in srgb, var(--tots-lavender) 70%, transparent),
+      rgba(216, 199, 240, 0.7),
       transparent 70%
     ),
     radial-gradient(
       50% 45% at 18% 88%,
-      color-mix(in srgb, var(--tots-peach) 72%, transparent),
+      rgba(255, 212, 186, 0.72),
       transparent 70%
     ),
     radial-gradient(
       40% 38% at 85% 82%,
-      color-mix(in srgb, var(--tots-sky) 68%, transparent),
+      rgba(168, 213, 242, 0.68),
       transparent 70%
     ),
     linear-gradient(
       170deg,
-      color-mix(in srgb, var(--tots-mint) 26%, white),
-      color-mix(in srgb, var(--tots-sunshine) 22%, white) 50%,
-      color-mix(in srgb, var(--tots-sky) 24%, white)
+      #eefbf2,
+      #fffbe9 50%,
+      #eaf6fd
     );
   background-attachment: scroll;
   background-repeat: no-repeat;
