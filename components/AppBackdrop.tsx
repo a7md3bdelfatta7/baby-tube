@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 export function AppBackdrop(): ReactElement {
   return (
     <div
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      className="app-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       aria-hidden
     >
       {/* soft pastel orbs — Tots palette */}

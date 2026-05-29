@@ -195,3 +195,54 @@ iframe {
     animation: shimmer 1.8s linear infinite;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Reduced-effects mode (TV / set-top browsers, e.g. Samsung Tizen, LG webOS).
+   These devices have weak GPUs that choke on large blurs, backdrop-filter,
+   fixed background attachment, and continuous animations. The `reduce-fx`
+   class is added to <html> for matching user agents; here we strip the
+   expensive effects so the UI stays responsive.
+   ──────────────────────────────────────────────────────────────────────── */
+.reduce-fx .app-backdrop {
+  display: none !important;
+}
+
+.reduce-fx,
+.reduce-fx * {
+  /* backdrop-filter is the single most expensive effect on TV browsers */
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  /* kill all continuous/entry animations (orbs, twinkle, float, pulse, shimmer, pop-in) */
+  animation: none !important;
+}
+
+.reduce-fx *,
+.reduce-fx *::before,
+.reduce-fx *::after {
+  /* avoid constant compositing from hover/state transitions on slow GPUs */
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+.reduce-fx body {
+  /* a fixed, multi-gradient background repaints the full viewport on scroll;
+     swap it for a single static gradient that scrolls cheaply with content */
+  background-image: linear-gradient(
+    170deg,
+    color-mix(in srgb, var(--tots-mint) 30%, white),
+    color-mix(in srgb, var(--tots-sky) 22%, white)
+  );
+  background-attachment: scroll;
+}
+
+/* Honor an explicit OS request to minimize motion for everyone. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
