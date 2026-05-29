@@ -225,14 +225,41 @@ iframe {
 }
 
 .reduce-fx body {
-  /* a fixed, multi-gradient background repaints the full viewport on scroll;
-     swap it for a single static gradient that scrolls cheaply with content */
-  background-image: linear-gradient(
-    170deg,
-    color-mix(in srgb, var(--tots-mint) 30%, white),
-    color-mix(in srgb, var(--tots-sky) 22%, white)
-  );
+  /* Keep the soft, multi-color "pastel orb" look — but with plain radial
+     gradients instead of blurred elements. Radial gradients are painted once
+     and cost the GPU almost nothing, unlike filter: blur() or backdrop-filter.
+     We also drop background-attachment: fixed, which forces a full-viewport
+     repaint on every scroll. */
+  background-image:
+    radial-gradient(
+      55% 45% at 12% 8%,
+      color-mix(in srgb, var(--tots-mint) 80%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 40% at 92% 14%,
+      color-mix(in srgb, var(--tots-lavender) 70%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 45% at 18% 88%,
+      color-mix(in srgb, var(--tots-peach) 72%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      40% 38% at 85% 82%,
+      color-mix(in srgb, var(--tots-sky) 68%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--tots-mint) 26%, white),
+      color-mix(in srgb, var(--tots-sunshine) 22%, white) 50%,
+      color-mix(in srgb, var(--tots-sky) 24%, white)
+    );
   background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 /* Honor an explicit OS request to minimize motion for everyone. */
