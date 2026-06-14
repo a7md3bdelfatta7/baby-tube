@@ -44,6 +44,7 @@ let timers: Record<string, PersistedTimer> = {};
 let currentKey = DEFAULT_PROFILE_KEY;
 let interval: ReturnType<typeof setInterval> | null = null;
 let initialized = false;
+let renewalListenersRegistered = false;
 
 function notify(): void {
   for (const l of listeners) l();
@@ -119,6 +120,47 @@ function resetIfDue(timer: PersistedTimer): PersistedTimer {
   };
 }
 
+function timerStateChanged(
+  before: PersistedTimer,
+  after: PersistedTimer,
+): boolean {
+  return (
+    before.lastResetAt !== after.lastResetAt ||
+    before.remaining !== after.remaining ||
+    before.expired !== after.expired
+  );
+}
+
+function refreshIfDue(): void {
+  ensureInit();
+  const current = timers[currentKey] ?? createTimer();
+  const resetTimer = resetIfDue(current);
+  if (!timerStateChanged(current, resetTimer)) return;
+
+  applyTimer(currentKey, resetTimer);
+  persist();
+  if (state.isPlaying && !state.expired) startInterval();
+  notify();
+}
+
+function registerRenewalListeners(): void {
+  if (renewalListenersRegistered || typeof window === "undefined") return;
+  renewalListenersRegistered = true;
+
+  const onAppVisible = (): void => {
+    if (document.visibilityState === "hidden") return;
+    refreshIfDue();
+  };
+
+  document.addEventListener("visibilitychange", onAppVisible);
+  window.addEventListener("pageshow", () => {
+    refreshIfDue();
+  });
+  window.addEventListener("focus", () => {
+    refreshIfDue();
+  });
+}
+
 function applyTimer(key: string, timer: PersistedTimer): void {
   currentKey = key;
   timers[key] = timer;
@@ -186,6 +228,8 @@ function ensureInit(): void {
       }
     }
   } catch {}
+
+  registerRenewalListeners();
 
   const timer = resetIfDue(timers[currentKey] ?? createTimer());
   applyTimer(currentKey, timer);
@@ -258,12 +302,7 @@ export const timerStore = {
   },
   setPlaying(playing: boolean): void {
     ensureInit();
-    const resetTimer = resetIfDue(timers[currentKey] ?? createTimer());
-    if (resetTimer.lastResetAt !== state.lastResetAt) {
-      applyTimer(currentKey, resetTimer);
-      persist();
-      notify();
-    }
+    refreshIfDue();
     if (state.expired) {
       state = { ...state, isPlaying: false };
       stopInterval();
@@ -316,12 +355,10 @@ export const timerStore = {
   },
   get(): State {
     ensureInit();
-    const resetTimer = resetIfDue(timers[currentKey] ?? createTimer());
-    if (resetTimer.lastResetAt !== state.lastResetAt) {
-      applyTimer(currentKey, resetTimer);
-      persist();
-    }
     return state;
+  },
+  refreshIfDue(): void {
+    refreshIfDue();
   },
 };
 
