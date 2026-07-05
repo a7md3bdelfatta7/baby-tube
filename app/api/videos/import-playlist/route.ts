@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { videos } from "@/db/schema";
 import { sql } from "drizzle-orm";
+import { appendVideoIdsToQueue } from "@/lib/app-settings-server";
 import { isAuthorized, unauthorized } from "@/lib/auth";
 import { extractPlaylistId, fetchPlaylistItems, thumbnailFor } from "@/lib/youtube";
 
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
   }));
 
   const inserted = await db.insert(videos).values(rows).returning();
+
+  await appendVideoIdsToQueue(inserted.map((video) => video.id));
+
   return NextResponse.json({
     imported: inserted.length,
     skipped: 0,

@@ -16,6 +16,7 @@ export function PlaylistImport(): ReactElement {
     mutationFn: () => importPlaylist(url),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["videos"] });
+      qc.invalidateQueries({ queryKey: ["queue"] });
     },
   });
 

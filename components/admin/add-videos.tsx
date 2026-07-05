@@ -72,6 +72,7 @@ export function AddVideos(): ReactElement {
       }
     }
     qc.invalidateQueries({ queryKey: ["videos"] });
+    qc.invalidateQueries({ queryKey: ["queue"] });
     setSubmitting(false);
     setTimeout(() => {
       setRows((items) => {

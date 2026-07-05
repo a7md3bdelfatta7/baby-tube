@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { videos } from "@/db/schema";
 import { asc, sql } from "drizzle-orm";
+import { appendVideoIdsToQueue } from "@/lib/app-settings-server";
 import { isAuthorized, unauthorized } from "@/lib/auth";
 import { videoInput } from "@/lib/validation";
 
@@ -29,5 +30,8 @@ export async function POST(req: NextRequest) {
     .insert(videos)
     .values({ ...parsed.data, position })
     .returning();
+
+  await appendVideoIdsToQueue([row.id]);
+
   return NextResponse.json(row, { status: 201 });
 }
