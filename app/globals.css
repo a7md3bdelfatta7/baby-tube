@@ -262,98 +262,76 @@ iframe {
   background-size: cover;
 }
 
-/* Listening mode animations
- * Kept lean for Samsung Tizen TV browser (older Chromium):
- * - No CSS custom properties inside @keyframes (Tizen skips those)
- * - No filter: blur() or backdrop-filter on animated elements
- * - Plain transform / opacity only, with -webkit- prefix
- */
-@-webkit-keyframes listen-pulse {
-  0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
-  50% { -webkit-transform: scale(1.06); transform: scale(1.06); }
-}
+/* Listening mode animations */
 @keyframes listen-pulse {
-  0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
-  50% { -webkit-transform: scale(1.06); transform: scale(1.06); }
-}
-
-@-webkit-keyframes listen-bounce {
-  0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
-  50% { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 20px 60px -10px rgba(80, 90, 160, 0.35);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 30px 80px -10px rgba(80, 90, 160, 0.45);
+  }
 }
 @keyframes listen-bounce {
-  0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
-  50% { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(4deg); }
 }
-
-@-webkit-keyframes listen-note-left {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
+@keyframes listen-note-float {
+  0% { transform: translate(0, 0) scale(0.9); opacity: 0; }
   15% { opacity: 1; }
-  100% { -webkit-transform: translate(-30px, -140px); transform: translate(-30px, -140px); opacity: 0; }
+  100% { transform: translate(var(--nx, 40px), -140px) scale(1.2); opacity: 0; }
 }
-@keyframes listen-note-left {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { -webkit-transform: translate(-30px, -140px); transform: translate(-30px, -140px); opacity: 0; }
-}
-
-@-webkit-keyframes listen-note-right {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { -webkit-transform: translate(40px, -140px); transform: translate(40px, -140px); opacity: 0; }
-}
-@keyframes listen-note-right {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { -webkit-transform: translate(40px, -140px); transform: translate(40px, -140px); opacity: 0; }
-}
-
-@-webkit-keyframes listen-note-center {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { -webkit-transform: translate(15px, -120px); transform: translate(15px, -120px); opacity: 0; }
-}
-@keyframes listen-note-center {
-  0% { -webkit-transform: translate(0, 0); transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { -webkit-transform: translate(15px, -120px); transform: translate(15px, -120px); opacity: 0; }
+@keyframes listen-blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(var(--bx, 30px), var(--by, -20px)) scale(1.1); }
 }
 
 .listen-pulse {
-  -webkit-animation: listen-pulse 2.6s ease-in-out infinite;
   animation: listen-pulse 2.6s ease-in-out infinite;
-  will-change: transform;
 }
 .listen-bounce {
-  display: inline-block;
-  -webkit-animation: listen-bounce 1.4s ease-in-out infinite;
   animation: listen-bounce 1.4s ease-in-out infinite;
-  will-change: transform;
 }
 .listen-note {
   position: absolute;
   color: rgba(255, 255, 255, 0.95);
   font-size: 2rem;
   font-weight: 700;
+  text-shadow: 0 4px 14px rgba(80, 90, 160, 0.35);
   pointer-events: none;
-  will-change: transform, opacity;
+  animation: listen-note-float 3.4s ease-out infinite;
 }
-.listen-note-1 {
-  left: 12%; bottom: 18%;
-  -webkit-animation: listen-note-left 3.4s ease-out infinite;
-  animation: listen-note-left 3.4s ease-out infinite;
+.listen-note-1 { left: 12%; bottom: 18%; --nx: -30px; animation-delay: 0s; }
+.listen-note-2 { right: 10%; bottom: 22%; --nx: 40px; animation-delay: 1.1s; font-size: 2.4rem; }
+.listen-note-3 { left: 48%; bottom: 8%; --nx: 20px; animation-delay: 2.2s; font-size: 1.6rem; }
+
+.listen-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: listen-blob-drift 12s ease-in-out infinite;
 }
-.listen-note-2 {
-  right: 10%; bottom: 22%; font-size: 2.4rem;
-  -webkit-animation: listen-note-right 3.4s ease-out infinite;
-  animation: listen-note-right 3.4s ease-out infinite;
-  -webkit-animation-delay: 1.1s; animation-delay: 1.1s;
+.listen-blob-1 {
+  width: 32rem; height: 32rem;
+  top: -6rem; left: -8rem;
+  background: radial-gradient(circle at 30% 30%, var(--tots-pink), transparent 70%);
+  --bx: 40px; --by: 30px;
 }
-.listen-note-3 {
-  left: 48%; bottom: 8%; font-size: 1.6rem;
-  -webkit-animation: listen-note-center 3.4s ease-out infinite;
-  animation: listen-note-center 3.4s ease-out infinite;
-  -webkit-animation-delay: 2.2s; animation-delay: 2.2s;
+.listen-blob-2 {
+  width: 28rem; height: 28rem;
+  bottom: -6rem; right: -6rem;
+  background: radial-gradient(circle at 40% 40%, var(--tots-sunshine), transparent 70%);
+  --bx: -30px; --by: -20px;
+  animation-delay: 3s;
+}
+.listen-blob-3 {
+  width: 22rem; height: 22rem;
+  top: 40%; right: 20%;
+  background: radial-gradient(circle at 40% 40%, var(--tots-mint), transparent 70%);
+  --bx: 20px; --by: 40px;
+  animation-delay: 6s;
 }
 
 /* Honor an explicit OS request to minimize motion for everyone. */

@@ -86,10 +86,11 @@ export default function ListenPage(): ReactElement {
   return (
     <main
       className={cn(
-        "relative flex min-h-screen flex-col overflow-hidden",
+        "relative flex min-h-[100dvh] flex-col overflow-hidden",
         "bg-gradient-to-br from-[color:var(--tots-lavender)] via-[color:var(--tots-sky)] to-[color:var(--tots-mint)]",
       )}
     >
+      <BackgroundBlobs />
 
       <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-4 pt-4 md:px-6 md:pt-6">
         <Link
@@ -177,17 +178,13 @@ function Visualizer({ isPlaying }: { isPlaying: boolean }): ReactElement {
     <div
       aria-hidden
       className={cn(
-        "relative grid size-56 place-items-center rounded-full ring-4 ring-white/70 md:size-64",
-        isPlaying && "listen-pulse",
+        "relative grid size-56 place-items-center rounded-full bg-white/60 shadow-[0_20px_60px_-10px_rgba(80,90,160,0.35)] ring-1 ring-white/60 backdrop-blur-xl md:size-64",
+        "before:absolute before:inset-2 before:rounded-full before:bg-gradient-to-br before:from-[color:var(--tots-pink)] before:via-[color:var(--tots-lavender)] before:to-[color:var(--tots-sky)]",
+        isPlaying ? "listen-pulse" : "opacity-95",
       )}
-      style={{
-        background:
-          "linear-gradient(135deg, var(--tots-pink), var(--tots-lavender) 55%, var(--tots-sky))",
-        boxShadow: "0 20px 60px -10px rgba(80, 90, 160, 0.35)",
-      }}
     >
       <div className="relative z-10 text-6xl md:text-7xl" aria-hidden>
-        <span className={cn(isPlaying && "listen-bounce")}>🎵</span>
+        <span className={cn(isPlaying && "listen-bounce inline-block")}>🎵</span>
       </div>
       {isPlaying ? (
         <>
@@ -202,6 +199,16 @@ function Visualizer({ isPlaying }: { isPlaying: boolean }): ReactElement {
           </span>
         </>
       ) : null}
+    </div>
+  );
+}
+
+function BackgroundBlobs(): ReactElement {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="listen-blob listen-blob-1" />
+      <div className="listen-blob listen-blob-2" />
+      <div className="listen-blob listen-blob-3" />
     </div>
   );
 }
