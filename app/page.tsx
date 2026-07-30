@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   Baby,
   Clapperboard,
+  Headphones,
   Play,
   Settings2,
   Sparkles,
@@ -90,6 +91,10 @@ export default function HomePage(): ReactElement {
     queryFn: getProfiles,
   });
   const activeProfile = useActiveChildProfile(profiles?.childProfiles);
+  const hasSongs = useMemo(
+    () => (videos ?? []).some((video) => video.categories.includes("Songs")),
+    [videos],
+  );
   const visible = useMemo(
     () =>
       videos
@@ -126,7 +131,7 @@ export default function HomePage(): ReactElement {
 
   return (
     <main className="mx-auto max-w-[1500px] px-4 pb-10 pt-4 md:px-6 md:pt-6">
-      <TopNav />
+      <TopNav hasSongs={hasSongs} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem]">
         <section aria-labelledby="videos-heading" className="min-w-0">
@@ -541,17 +546,34 @@ function VideoCard({
   );
 }
 
-function TopNav(): ReactElement {
+function TopNav({ hasSongs }: { hasSongs: boolean }): ReactElement {
   return (
-    <div className="mb-5 flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:mb-6 md:px-4 md:py-3">
+    <div className="mb-5 flex items-center justify-between gap-3 rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:mb-6 md:px-4 md:py-3">
       <BrandLogo size="md" />
-      <Badge
-        variant="secondary"
-        className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
-      >
-        <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
-        Pick a happy show
-      </Badge>
+      <div className="flex items-center gap-2">
+        {hasSongs ? (
+          <Link
+            href="/listen"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-4 py-2 text-xs font-semibold text-[color:var(--tots-cream)] shadow-sm transition",
+              "hover:-translate-y-0.5 hover:brightness-110",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
+            )}
+            aria-label="Enter listening mode"
+          >
+            <Headphones className="size-3.5" aria-hidden />
+            <span className="hidden sm:inline">Listening mode</span>
+            <span className="sm:hidden">Listen</span>
+          </Link>
+        ) : null}
+        <Badge
+          variant="secondary"
+          className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
+        >
+          <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
+          Pick a happy show
+        </Badge>
+      </div>
     </div>
   );
 }

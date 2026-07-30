@@ -159,7 +159,7 @@ export function WatchTimerBar(): ReactElement | null {
   const pathname = usePathname();
   const timer = useTimerViewModel();
 
-  if (!timer || pathname === "/") return null;
+  if (!timer || pathname === "/" || pathname === "/listen") return null;
 
   const { Icon } = timer.state;
 
