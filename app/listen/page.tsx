@@ -178,8 +178,8 @@ function Visualizer({ isPlaying }: { isPlaying: boolean }): ReactElement {
     <div
       aria-hidden
       className={cn(
-        "relative grid size-56 place-items-center rounded-full bg-white/60 shadow-[0_20px_60px_-10px_rgba(80,90,160,0.35)] ring-1 ring-white/60 backdrop-blur-xl md:size-64",
-        "before:absolute before:inset-2 before:rounded-full before:bg-gradient-to-br before:from-[color:var(--tots-pink)] before:via-[color:var(--tots-lavender)] before:to-[color:var(--tots-sky)]",
+        "relative grid size-56 place-items-center rounded-full shadow-[0_20px_60px_-10px_rgba(80,90,160,0.35)] ring-4 ring-white/70 md:size-64",
+        "bg-gradient-to-br from-[color:var(--tots-pink)] via-[color:var(--tots-lavender)] to-[color:var(--tots-sky)]",
         isPlaying ? "listen-pulse" : "opacity-95",
       )}
     >
