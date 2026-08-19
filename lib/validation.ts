@@ -1,5 +1,13 @@
 import { z } from "zod";
+import { isValidBirthDate } from "@/lib/age";
 import { CONTENT_CATEGORIES, normalizeCategories } from "@/lib/categories";
+
+const birthDateInput = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Birth date must be YYYY-MM-DD")
+  .refine((value) => isValidBirthDate(value), {
+    message: "Birth date must be a real date, not in the future, and age 0–18",
+  });
 
 export const videoInput = z.object({
   title: z.string().min(1).max(500),
@@ -37,7 +45,7 @@ export const watchHistoryEntryInput = z.object({
 export const childProfileInput = z.object({
   id: z.string().min(1).max(80),
   name: z.string().min(1).max(80),
-  ageRange: z.string().max(80).default(""),
+  birthDate: birthDateInput,
   screenTimeMinutes: z.number().int().min(1).max(180),
   screenTimeResetHours: z.number().int().min(1).max(168).default(24),
   preferredCategories: z
@@ -48,19 +56,33 @@ export const childProfileInput = z.object({
   watchHistory: z.array(watchHistoryEntryInput).max(100).default([]),
 });
 
+/** Lenient read shape so legacy profiles without birthDate still load. */
+export const childProfileRead = childProfileInput.extend({
+  birthDate: z.string().default(""),
+});
+
+function dedupeProfiles<T extends { id: string }>(profiles: T[]): T[] {
+  const seen = new Set<string>();
+
+  return profiles.filter((profile) => {
+    if (seen.has(profile.id)) return false;
+    seen.add(profile.id);
+    return true;
+  });
+}
+
 export const profilesInput = z.object({
   childProfiles: z
     .array(childProfileInput)
     .max(12)
-    .transform((profiles) => {
-      const seen = new Set<string>();
+    .transform((profiles) => dedupeProfiles(profiles)),
+});
 
-      return profiles.filter((profile) => {
-        if (seen.has(profile.id)) return false;
-        seen.add(profile.id);
-        return true;
-      });
-    }),
+export const profilesRead = z.object({
+  childProfiles: z
+    .array(childProfileRead)
+    .max(12)
+    .transform((profiles) => dedupeProfiles(profiles)),
 });
 
 export const watchHistoryInput = z.object({

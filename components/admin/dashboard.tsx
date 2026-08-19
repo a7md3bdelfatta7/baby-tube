@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ChildProfile, WatchHistoryEntry } from "@/db/schema";
+import { formatAge } from "@/lib/age";
 import { getProfiles, listVideos } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -241,7 +242,7 @@ function ProfileInsightCard({ insight }: { insight: ProfileInsight }): ReactElem
           <div>
             <CardTitle>{insight.profile.name}</CardTitle>
             <CardDescription>
-              {insight.profile.ageRange || "No age range"} ·{" "}
+              {formatAge(insight.profile.birthDate)} ·{" "}
               {insight.profile.screenTimeMinutes}m daily limit
             </CardDescription>
           </div>

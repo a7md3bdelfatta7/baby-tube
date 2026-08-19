@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { ChildProfile, Video } from "@/db/schema";
+import { formatAge } from "@/lib/age";
 import { getProfiles, getQueue, listVideos } from "@/lib/api";
 import { CONTENT_CATEGORIES, type ContentCategory } from "@/lib/categories";
 import {
@@ -369,7 +370,7 @@ function ProfileSelector({
                     : "text-muted-foreground",
                 )}
               >
-                {profile.ageRange || "No age range"} · {categories}
+                {formatAge(profile.birthDate)} · {categories}
               </span>
             </button>
           );

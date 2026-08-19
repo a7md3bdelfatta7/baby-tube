@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import type { ChildProfile } from "@/db/schema";
+import { formatAge, isValidBirthDate } from "@/lib/age";
 import { getProfiles, updateProfiles } from "@/lib/api";
 import { createProfileId } from "@/lib/profiles";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import { CategoryPicker } from "./video-form";
 type ProfileForm = {
   id: string;
   name: string;
-  ageRange: string;
+  birthDate: string;
   screenTimeMinutes: string;
   screenTimeResetHours: string;
   preferredCategories: string[];
@@ -33,7 +34,7 @@ function toProfileForm(profile: ChildProfile): ProfileForm {
   return {
     id: profile.id,
     name: profile.name,
-    ageRange: profile.ageRange,
+    birthDate: profile.birthDate ?? "",
     screenTimeMinutes: String(profile.screenTimeMinutes),
     screenTimeResetHours: String(profile.screenTimeResetHours ?? 24),
     preferredCategories: profile.preferredCategories,
@@ -45,7 +46,7 @@ function toChildProfile(profile: ProfileForm): ChildProfile {
   return {
     id: profile.id,
     name: profile.name.trim(),
-    ageRange: profile.ageRange.trim(),
+    birthDate: profile.birthDate,
     screenTimeMinutes: Number(profile.screenTimeMinutes),
     screenTimeResetHours: Number(profile.screenTimeResetHours),
     preferredCategories: profile.preferredCategories,
@@ -59,6 +60,7 @@ function isValidProfile(profile: ProfileForm): boolean {
 
   return (
     profile.name.trim().length > 0 &&
+    isValidBirthDate(profile.birthDate) &&
     Number.isInteger(minutes) &&
     minutes >= 1 &&
     minutes <= 180 &&
@@ -102,7 +104,7 @@ export function ProfilesPanel(): ReactElement {
       {
         id: createProfileId(),
         name: "",
-        ageRange: "",
+        birthDate: "",
         screenTimeMinutes: "15",
         screenTimeResetHours: "24",
         preferredCategories: [],
@@ -120,8 +122,8 @@ export function ProfilesPanel(): ReactElement {
       <CardHeader>
         <CardTitle>Child profiles</CardTitle>
         <CardDescription>
-          Give each child their own timer, favorite categories, age range, and
-          recent watch history.
+          Give each child their own timer, favorite categories, birth date, and
+          recent watch history. Age updates automatically from the birth date.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -170,8 +172,9 @@ export function ProfilesPanel(): ReactElement {
 
             {!canSave ? (
               <p className="text-sm text-destructive">
-                Each profile needs a name, a whole-number timer from 1 to 180
-                minutes, and a reset interval from 1 to 168 hours.
+                Each profile needs a name, a birth date (age 0–18), a whole-number
+                timer from 1 to 180 minutes, and a reset interval from 1 to 168
+                hours.
               </p>
             ) : null}
             {save.isSuccess ? (
@@ -204,6 +207,7 @@ function ProfileEditorCard({
     Number.isInteger(minutes) && minutes >= 1 && minutes <= 180;
   const isValidResetHours =
     Number.isInteger(resetHours) && resetHours >= 1 && resetHours <= 168;
+  const birthDateValid = isValidBirthDate(profile.birthDate);
 
   return (
     <Card className="rounded-2xl bg-white/70 shadow-none ring-1 ring-black/[0.04]">
@@ -217,13 +221,20 @@ function ProfileEditorCard({
             }
             aria-invalid={!profile.name.trim() ? true : undefined}
           />
-          <Input
-            placeholder="Age range, e.g. 3-5"
-            value={profile.ageRange}
-            onChange={(event) =>
-              onUpdate(profile.id, { ageRange: event.target.value })
-            }
-          />
+          <div className="space-y-1">
+            <Input
+              type="date"
+              value={profile.birthDate}
+              onChange={(event) =>
+                onUpdate(profile.id, { birthDate: event.target.value })
+              }
+              aria-label="Birth date"
+              aria-invalid={!birthDateValid ? true : undefined}
+            />
+            <p className="text-xs text-muted-foreground">
+              Age: {formatAge(profile.birthDate)}
+            </p>
+          </div>
           <Input
             type="number"
             min={1}

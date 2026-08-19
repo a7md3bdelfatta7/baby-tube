@@ -52,7 +52,7 @@ export type WatchHistoryEntry = {
 export type ChildProfile = {
   id: string;
   name: string;
-  ageRange: string;
+  birthDate: string;
   screenTimeMinutes: number;
   screenTimeResetHours: number;
   preferredCategories: string[];

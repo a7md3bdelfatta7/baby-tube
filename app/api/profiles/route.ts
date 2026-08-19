@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appSettings, type AppSettings } from "@/db/schema";
 import { isAuthorized, unauthorized } from "@/lib/auth";
-import { profilesInput } from "@/lib/validation";
+import { profilesInput, profilesRead } from "@/lib/validation";
 
 const SETTINGS_ID = 1;
 
@@ -35,7 +35,7 @@ async function getOrCreateSettings(): Promise<AppSettings> {
 
 export async function GET(): Promise<Response> {
   const settings = await getOrCreateSettings();
-  const parsed = profilesInput.parse({ childProfiles: settings.childProfiles });
+  const parsed = profilesRead.parse({ childProfiles: settings.childProfiles });
 
   return NextResponse.json({ childProfiles: parsed.childProfiles });
 }
