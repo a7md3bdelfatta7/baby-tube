@@ -205,7 +205,9 @@ export default function WatchPage({
         </span>
 
         {expired ? (
-          <BreakModeScreen />
+          <BreakModeScreen
+            hasSongs={videos.some((video) => video.categories.includes("Songs"))}
+          />
         ) : (
           <div className="overflow-hidden rounded-[1.4rem]">
             <Player
