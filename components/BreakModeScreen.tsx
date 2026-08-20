@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   BookOpen,
   Droplets,
+  Headphones,
   Home,
   Moon,
   Sparkles,
@@ -44,7 +45,11 @@ const BREAK_IDEAS: BreakIdea[] = [
   },
 ];
 
-export function BreakModeScreen(): ReactElement {
+export function BreakModeScreen({
+  hasSongs,
+}: {
+  hasSongs: boolean;
+}): ReactElement {
   return (
     <section
       aria-labelledby="break-mode-heading"
@@ -108,17 +113,33 @@ export function BreakModeScreen(): ReactElement {
           })}
         </div>
 
-        <Link
-          href="/"
-          className={cn(
-            "mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-5 py-3 text-sm font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 transition",
-            "hover:-translate-y-0.5 hover:brightness-110",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-2",
-          )}
-        >
-          <Home className="size-4" aria-hidden />
-          Back home
-        </Link>
+        <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-3">
+          {hasSongs ? (
+            <Link
+              href="/listen"
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-5 py-3 text-sm font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 transition",
+                "hover:-translate-y-0.5 hover:brightness-110",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-2",
+              )}
+              aria-label="Enter listening mode"
+            >
+              <Headphones className="size-4" aria-hidden />
+              Listening mode
+            </Link>
+          ) : null}
+          <Link
+            href="/"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] transition",
+              "hover:-translate-y-0.5 hover:shadow-md",
+              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40 focus-visible:ring-offset-2",
+            )}
+          >
+            <Home className="size-4 text-[color:var(--tots-ink)]" aria-hidden />
+            Back home
+          </Link>
+        </div>
       </div>
     </section>
   );
