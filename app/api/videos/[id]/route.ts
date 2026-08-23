@@ -3,7 +3,8 @@ import { db } from "@/db";
 import { videos } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { isAuthorized, unauthorized } from "@/lib/auth";
-import { videoUpdate } from "@/lib/validation";
+import { loadContentCategories } from "@/lib/categories-server";
+import { createVideoUpdate } from "@/lib/validation";
 
 export async function GET(
   _req: NextRequest,
@@ -27,7 +28,8 @@ export async function PATCH(
   const { id } = await params;
   const numId = Number(id);
   const body = await req.json();
-  const parsed = videoUpdate.safeParse(body);
+  const allowed = await loadContentCategories();
+  const parsed = createVideoUpdate(allowed).safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

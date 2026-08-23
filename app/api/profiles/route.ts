@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appSettings, type AppSettings } from "@/db/schema";
 import { isAuthorized, unauthorized } from "@/lib/auth";
-import { profilesInput, profilesRead } from "@/lib/validation";
+import { loadContentCategories } from "@/lib/categories-server";
+import { createProfilesInput, createProfilesRead } from "@/lib/validation";
 
 const SETTINGS_ID = 1;
 
@@ -35,7 +36,10 @@ async function getOrCreateSettings(): Promise<AppSettings> {
 
 export async function GET(): Promise<Response> {
   const settings = await getOrCreateSettings();
-  const parsed = profilesRead.parse({ childProfiles: settings.childProfiles });
+  const allowed = await loadContentCategories();
+  const parsed = createProfilesRead(allowed).parse({
+    childProfiles: settings.childProfiles,
+  });
 
   return NextResponse.json({ childProfiles: parsed.childProfiles });
 }
@@ -44,7 +48,8 @@ export async function PATCH(req: NextRequest): Promise<Response> {
   if (!isAuthorized(req)) return unauthorized();
 
   const body = await req.json();
-  const parsed = profilesInput.safeParse(body);
+  const allowed = await loadContentCategories();
+  const parsed = createProfilesInput(allowed).safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

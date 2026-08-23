@@ -35,6 +35,10 @@ export const appSettings = pgTable("app_settings", {
     .$type<ChildProfile[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  contentCategories: jsonb("content_categories")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
 });
 
 export type Video = typeof videos.$inferSelect;

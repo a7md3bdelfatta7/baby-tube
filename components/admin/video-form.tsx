@@ -4,7 +4,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CONTENT_CATEGORIES } from "@/lib/categories";
+import { useContentCategories } from "@/lib/use-content-categories";
 import { cn } from "@/lib/utils";
 import { fmtCategories } from "./shared";
 
@@ -193,10 +193,15 @@ export function VideoFormFields({
 export function CategoryPicker({
   value,
   onChange,
+  categories: categoriesProp,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
+  categories?: readonly string[];
 }): ReactElement {
+  const { categories: loadedCategories, isLoading } = useContentCategories();
+  const categories = categoriesProp ?? loadedCategories;
+
   const toggle = (category: string): void => {
     onChange(
       value.includes(category)
@@ -205,9 +210,13 @@ export function CategoryPicker({
     );
   };
 
+  if (isLoading && !categoriesProp) {
+    return <p className="text-sm text-muted-foreground">Loading categories…</p>;
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
-      {CONTENT_CATEGORIES.map((category) => {
+      {categories.map((category) => {
         const selected = value.includes(category);
 
         return (

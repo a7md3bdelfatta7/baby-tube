@@ -16,7 +16,7 @@ import {
 import type { ChildProfile, Video } from "@/db/schema";
 import { formatAge } from "@/lib/age";
 import { getProfiles, getQueue, listVideos } from "@/lib/api";
-import { CONTENT_CATEGORIES, type ContentCategory } from "@/lib/categories";
+import type { ContentCategory } from "@/lib/categories";
 import {
   filterVideosForProfile,
   setActiveChildProfileId,
@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BrandLogo } from "@/components/BrandLogo";
 import { WatchTimerCard } from "@/components/WatchTimer";
+import { useContentCategories } from "@/lib/use-content-categories";
 import { cn } from "@/lib/utils";
 
 const PASTELS = [
@@ -47,8 +48,11 @@ type CategoryFilterOption = {
   count: number;
 };
 
-function buildCategoryFilters(videos: Video[]): CategoryFilterOption[] {
-  const categoryFilters = CONTENT_CATEGORIES.map((category) => ({
+function buildCategoryFilters(
+  videos: Video[],
+  contentCategories: readonly string[],
+): CategoryFilterOption[] {
+  const categoryFilters = contentCategories.map((category) => ({
     label: category,
     count: videos.filter((video) => video.categories.includes(category)).length,
   })).filter((filter) => filter.count > 0);
@@ -77,6 +81,7 @@ function filterVideos(videos: Video[], category: CategoryFilter): Video[] {
 
 export default function HomePage(): ReactElement {
   const router = useRouter();
+  const { categories: contentCategories } = useContentCategories();
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("All");
   const { data: videos, isLoading } = useQuery({
@@ -108,8 +113,8 @@ export default function HomePage(): ReactElement {
     [activeProfile, visible.videos],
   );
   const categoryFilters = useMemo(
-    () => buildCategoryFilters(profileVideos),
-    [profileVideos],
+    () => buildCategoryFilters(profileVideos, contentCategories),
+    [contentCategories, profileVideos],
   );
   const filteredVideos = useMemo(
     () => filterVideos(profileVideos, selectedCategory),

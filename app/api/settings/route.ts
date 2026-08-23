@@ -2,40 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appSettings, type AppSettings } from "@/db/schema";
+import { getOrCreateSettings } from "@/lib/app-settings-server";
 import { isAuthorized, unauthorized } from "@/lib/auth";
+import {
+  applyCategoryListUpdate,
+  resolveContentCategories,
+  validateCategoryRename,
+} from "@/lib/categories-server";
 import { settingsInput } from "@/lib/validation";
 
 const SETTINGS_ID = 1;
 
-async function getOrCreateSettings(): Promise<AppSettings> {
-  const [existing] = await db
-    .select()
-    .from(appSettings)
-    .where(eq(appSettings.id, SETTINGS_ID));
-
-  if (existing) return existing;
-
-  const [created] = await db
-    .insert(appSettings)
-    .values({ id: SETTINGS_ID })
-    .onConflictDoNothing()
-    .returning();
-
-  if (created) return created;
-
-  const [row] = await db
-    .select()
-    .from(appSettings)
-    .where(eq(appSettings.id, SETTINGS_ID));
-
-  if (!row) throw new Error("Unable to load settings");
-
-  return row;
-}
-
 export async function GET(): Promise<Response> {
   const settings = await getOrCreateSettings();
-  return NextResponse.json(settings);
+  return NextResponse.json({
+    ...settings,
+    contentCategories: resolveContentCategories(settings),
+  });
 }
 
 export async function PATCH(req: NextRequest): Promise<Response> {
@@ -48,14 +31,51 @@ export async function PATCH(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const current = await getOrCreateSettings();
+  const previousCategories = resolveContentCategories(current);
+  const update: Partial<AppSettings> = {};
+
+  if (parsed.data.screenTimeMinutes !== undefined) {
+    update.screenTimeMinutes = parsed.data.screenTimeMinutes;
+  }
+
+  if (parsed.data.contentCategories !== undefined) {
+    const nextCategories = parsed.data.contentCategories;
+
+    if (parsed.data.categoryRename) {
+      const renameError = validateCategoryRename(
+        previousCategories,
+        nextCategories,
+        parsed.data.categoryRename,
+      );
+
+      if (renameError) {
+        return NextResponse.json({ error: renameError }, { status: 400 });
+      }
+
+      await applyCategoryListUpdate(
+        previousCategories,
+        nextCategories,
+        parsed.data.categoryRename,
+      );
+    } else {
+      await applyCategoryListUpdate(previousCategories, nextCategories);
+    }
+
+    update.contentCategories = nextCategories;
+  }
+
   const [settings] = await db
     .insert(appSettings)
-    .values({ id: SETTINGS_ID, ...parsed.data })
+    .values({ id: SETTINGS_ID, ...update })
     .onConflictDoUpdate({
       target: appSettings.id,
-      set: parsed.data,
+      set: update,
     })
     .returning();
 
-  return NextResponse.json(settings);
+  return NextResponse.json({
+    ...settings,
+    contentCategories: resolveContentCategories(settings),
+  });
 }

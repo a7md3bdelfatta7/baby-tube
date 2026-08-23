@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appSettings, type AppSettings, type ChildProfile } from "@/db/schema";
-import { profilesRead, watchHistoryInput } from "@/lib/validation";
+import { loadContentCategories } from "@/lib/categories-server";
+import { createProfilesRead, watchHistoryInput } from "@/lib/validation";
 
 const SETTINGS_ID = 1;
 const MAX_HISTORY_ITEMS = 100;
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const settings = await getOrCreateSettings();
-  const profiles = profilesRead.parse({
+  const allowed = await loadContentCategories();
+  const profiles = createProfilesRead(allowed).parse({
     childProfiles: settings.childProfiles,
   }).childProfiles;
   const childProfiles = appendWatchHistory(

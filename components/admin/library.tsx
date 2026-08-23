@@ -1,16 +1,16 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GripVertical, Pencil, Search, Trash2 } from "lucide-react";
 import type { Video } from "@/db/schema";
-import { CONTENT_CATEGORIES } from "@/lib/categories";
 import {
   deleteVideo,
   listVideos,
   updateVideo,
 } from "@/lib/api";
+import { useContentCategories } from "@/lib/use-content-categories";
 import { extractVideoId } from "@/lib/youtube";
 import {
   AlertDialog,
@@ -106,6 +106,7 @@ function matchesSearch(video: Video, query: string): boolean {
 
 export function VideoList(): ReactElement {
   const qc = useQueryClient();
+  const { categories } = useContentCategories();
   const { data, isLoading } = useQuery({
     queryKey: ["videos"],
     queryFn: listVideos,
@@ -115,7 +116,13 @@ export function VideoList(): ReactElement {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<LibraryFilter>("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [bulkCategory, setBulkCategory] = useState<string>(CONTENT_CATEGORIES[0]);
+  const [bulkCategory, setBulkCategory] = useState<string>("");
+
+  useEffect(() => {
+    if (!bulkCategory && categories.length > 0) {
+      setBulkCategory(categories[0]);
+    }
+  }, [bulkCategory, categories]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const videos = data ?? [];
@@ -292,6 +299,7 @@ export function VideoList(): ReactElement {
             <LibraryFilterControls
               filter={filter}
               duplicateCount={duplicateIds.size}
+              categories={categories}
               onChange={setFilter}
             />
           </div>
@@ -321,7 +329,7 @@ export function VideoList(): ReactElement {
                 onChange={(event) => setBulkCategory(event.target.value)}
                 aria-label="Bulk category"
               >
-                {CONTENT_CATEGORIES.map((category) => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -503,10 +511,12 @@ export function VideoList(): ReactElement {
 function LibraryFilterControls({
   filter,
   duplicateCount,
+  categories,
   onChange,
 }: {
   filter: LibraryFilter;
   duplicateCount: number;
+  categories: readonly string[];
   onChange: (nextFilter: LibraryFilter) => void;
 }): ReactElement {
   return (
@@ -524,7 +534,7 @@ function LibraryFilterControls({
           {label}
         </Button>
       ))}
-      {CONTENT_CATEGORIES.map((category) => (
+      {categories.map((category) => (
         <Button
           key={category}
           type="button"

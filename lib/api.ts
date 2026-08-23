@@ -82,14 +82,23 @@ export async function getSettings(): Promise<AppSettings> {
 }
 
 export async function updateSettings(input: {
-  screenTimeMinutes: number;
+  screenTimeMinutes?: number;
+  contentCategories?: string[];
+  categoryRename?: { from: string; to: string };
 }): Promise<AppSettings> {
   const res = await fetch("/api/settings", {
     method: "PATCH",
     headers: { "content-type": "application/json", ...adminHeaders() },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw new Error((await res.json()).error?.message ?? "Failed");
+  if (!res.ok) {
+    const body = await res.json();
+    const message =
+      typeof body.error === "string"
+        ? body.error
+        : (body.error?.message ?? "Failed");
+    throw new Error(message);
+  }
   return res.json();
 }
 

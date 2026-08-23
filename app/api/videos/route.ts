@@ -4,7 +4,8 @@ import { videos } from "@/db/schema";
 import { asc, sql } from "drizzle-orm";
 import { appendVideoIdsToQueue } from "@/lib/app-settings-server";
 import { isAuthorized, unauthorized } from "@/lib/auth";
-import { videoInput } from "@/lib/validation";
+import { loadContentCategories } from "@/lib/categories-server";
+import { createVideoInput } from "@/lib/validation";
 
 export async function GET() {
   const rows = await db
@@ -17,7 +18,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!isAuthorized(req)) return unauthorized();
   const body = await req.json();
-  const parsed = videoInput.safeParse(body);
+  const allowed = await loadContentCategories();
+  const parsed = createVideoInput(allowed).safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
