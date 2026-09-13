@@ -22,8 +22,11 @@ type Props = {
   videoUrl: string;
   startSeconds?: number | null;
   endSeconds?: number | null;
+  initialPositionSeconds?: number | null;
   onEnded: (status: "completed" | "skipped", watchedSeconds: number) => void;
   onProgress?: (watchedSeconds: number) => void;
+  onDurationKnown?: (durationSeconds: number) => void;
+  onPlaybackTick?: (positionSeconds: number, durationSeconds: number) => void;
 };
 
 function formatTime(seconds: number): string {
@@ -38,8 +41,11 @@ export function Player({
   videoUrl,
   startSeconds,
   endSeconds,
+  initialPositionSeconds,
   onEnded,
   onProgress,
+  onDurationKnown,
+  onPlaybackTick,
 }: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -51,8 +57,13 @@ export function Player({
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [currentSeconds, setCurrentSeconds] = useState(startSeconds ?? 0);
+  const [currentSeconds, setCurrentSeconds] = useState(
+    initialPositionSeconds ?? startSeconds ?? 0,
+  );
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [hasResumePosition, setHasResumePosition] = useState(
+    typeof initialPositionSeconds === "number" && initialPositionSeconds > 0,
+  );
 
   useEffect(() => {
     endedRef.current = false;
@@ -60,13 +71,38 @@ export function Player({
     setIsReady(false);
     setIsPlaying(false);
     setHasStarted(false);
-    setCurrentSeconds(startSeconds ?? 0);
+    setCurrentSeconds(initialPositionSeconds ?? startSeconds ?? 0);
     setDurationSeconds(0);
+    setHasResumePosition(
+      typeof initialPositionSeconds === "number" && initialPositionSeconds > 0,
+    );
     return () => {
       if (watchRef.current) clearInterval(watchRef.current);
       timerStore.setPlaying(false);
     };
+    // Resume is applied when the video changes. Progress syncs must not
+    // reset playback or the screen-time timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [startSeconds, videoUrl]);
+
+  const hasStartedRef = useRef(false);
+  hasStartedRef.current = hasStarted;
+
+  useEffect(() => {
+    if (hasStartedRef.current) return;
+    if (typeof initialPositionSeconds !== "number" || initialPositionSeconds <= 0) {
+      return;
+    }
+
+    setHasResumePosition(true);
+    setCurrentSeconds(initialPositionSeconds);
+
+    try {
+      playerRef.current?.seekTo(initialPositionSeconds, true);
+    } catch {
+      /* player may not be ready yet */
+    }
+  }, [initialPositionSeconds]);
 
   useEffect(() => {
     const syncFullscreenState = (): void => {
@@ -111,6 +147,10 @@ export function Player({
 
       if (typeof duration === "number" && duration > 0) {
         setDurationSeconds(duration);
+        onPlaybackTick?.(
+          Math.floor(currentTime ?? currentSeconds),
+          Math.floor(duration),
+        );
       }
     } catch {
       /* player API may throw while tearing down */
@@ -157,11 +197,22 @@ export function Player({
     try {
       e.target.mute();
       e.target.setVolume(80);
-      e.target.playVideo();
       const duration = e.target.getDuration?.();
       if (typeof duration === "number" && duration > 0) {
         setDurationSeconds(duration);
+        onDurationKnown?.(duration);
       }
+
+      if (
+        typeof initialPositionSeconds === "number" &&
+        initialPositionSeconds > 0
+      ) {
+        e.target.seekTo(initialPositionSeconds, true);
+        setCurrentSeconds(initialPositionSeconds);
+        return;
+      }
+
+      e.target.playVideo();
     } catch {
       /* player API can throw before the iframe is fully ready */
     }
@@ -172,6 +223,7 @@ export function Player({
     if (s === 1) {
       setIsPlaying(true);
       setHasStarted(true);
+      setHasResumePosition(false);
       timerStore.setPlaying(true);
       try {
         e.target.unMute();
@@ -335,7 +387,11 @@ export function Player({
             )}
           >
             <Play className="mr-2 size-6 fill-current" aria-hidden />
-            {isReady ? "Play show" : "Getting ready"}
+            {isReady
+              ? hasResumePosition
+                ? "Continue watching"
+                : "Play show"
+              : "Getting ready"}
           </Button>
         </div>
       ) : null}

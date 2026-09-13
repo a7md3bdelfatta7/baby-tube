@@ -138,3 +138,24 @@ export async function recordWatchHistory(input: {
   if (!res.ok) throw new Error("Failed to record watch history");
   return res.json();
 }
+
+export type VideoProgressState = {
+  profileId: string;
+  videoProgress: ChildProfile["videoProgress"];
+};
+
+export async function saveVideoProgress(input: {
+  profileId: string;
+  videoId: number;
+  positionSeconds: number;
+  totalSeconds: number;
+  clear?: boolean;
+}): Promise<VideoProgressState> {
+  const res = await fetch("/api/profiles/video-progress", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to save video progress");
+  return res.json();
+}

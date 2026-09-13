@@ -28,6 +28,7 @@ type ProfileForm = {
   screenTimeResetHours: string;
   preferredCategories: string[];
   watchHistory: ChildProfile["watchHistory"];
+  videoProgress: ChildProfile["videoProgress"];
 };
 
 function toProfileForm(profile: ChildProfile): ProfileForm {
@@ -39,6 +40,7 @@ function toProfileForm(profile: ChildProfile): ProfileForm {
     screenTimeResetHours: String(profile.screenTimeResetHours ?? 24),
     preferredCategories: profile.preferredCategories,
     watchHistory: profile.watchHistory,
+    videoProgress: profile.videoProgress ?? [],
   };
 }
 
@@ -51,6 +53,7 @@ function toChildProfile(profile: ProfileForm): ChildProfile {
     screenTimeResetHours: Number(profile.screenTimeResetHours),
     preferredCategories: profile.preferredCategories,
     watchHistory: profile.watchHistory,
+    videoProgress: profile.videoProgress,
   };
 }
 
@@ -109,6 +112,7 @@ export function ProfilesPanel(): ReactElement {
         screenTimeResetHours: "24",
         preferredCategories: [],
         watchHistory: [],
+        videoProgress: [],
       },
     ]);
   };

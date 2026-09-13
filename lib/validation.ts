@@ -52,6 +52,13 @@ export const watchHistoryEntryInput = z.object({
   watchedSeconds: z.number().int().min(0).max(24 * 60 * 60).default(0),
 });
 
+export const videoProgressEntryInput = z.object({
+  videoId: z.number().int().positive(),
+  positionSeconds: z.number().int().min(0).max(24 * 60 * 60),
+  totalSeconds: z.number().int().min(0).max(24 * 60 * 60),
+  updatedAt: z.string().datetime(),
+});
+
 export function createChildProfileInput(allowed: readonly string[]) {
   return z.object({
     id: z.string().min(1).max(80),
@@ -61,6 +68,7 @@ export function createChildProfileInput(allowed: readonly string[]) {
     screenTimeResetHours: z.number().int().min(1).max(168).default(24),
     preferredCategories: categoriesField(allowed),
     watchHistory: z.array(watchHistoryEntryInput).max(100).default([]),
+    videoProgress: z.array(videoProgressEntryInput).max(50).default([]),
   });
 }
 
@@ -130,6 +138,18 @@ export const watchHistoryInput = z.object({
   watchedSeconds: z.number().int().min(0).max(24 * 60 * 60),
 });
 
+export const videoProgressInput = z.object({
+  profileId: z.string().min(1).max(80),
+  videoId: z.number().int().positive(),
+  positionSeconds: z.number().int().min(0).max(24 * 60 * 60),
+  totalSeconds: z.number().int().min(1).max(24 * 60 * 60),
+  clear: z.boolean().optional().default(false),
+});
+
+export const videoProgressQuery = z.object({
+  profileId: z.string().min(1).max(80),
+});
+
 export const queueInput = z.object({
   queueVideoIds: z
     .array(z.number().int().positive())
@@ -140,3 +160,6 @@ export const queueInput = z.object({
 export type SettingsInput = z.infer<typeof settingsInput>;
 export type QueueInput = z.infer<typeof queueInput>;
 export type WatchHistoryInput = z.infer<typeof watchHistoryInput>;
+export type VideoProgressInput = z.infer<typeof videoProgressInput>;
+export type VideoProgressQuery = z.infer<typeof videoProgressQuery>;
+export type ChildProfileInput = z.infer<ReturnType<typeof createChildProfileInput>>;

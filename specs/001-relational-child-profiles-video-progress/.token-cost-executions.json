@@ -1,0 +1,142 @@
+{
+  "title": "001-relational-child-profiles-video-progress",
+  "generatedAt": "2026-09-04T13:05:00.000Z",
+  "featureDirectory": "/Users/ahmedmohamed/projects/learn/AI/baby-tube/specs/001-relational-child-profiles-video-progress",
+  "pipelineRun": true,
+  "expectedExecutionIds": [
+    "orchestrator-20260904",
+    "44e81cd9-df50-4583-bd1c-d90797e37067",
+    "8f99be9a-e74a-47cd-ac62-61bab67c1b50",
+    "bf6413f5-3808-4376-9c3f-12d6f9e9ec36",
+    "759f52d9-9326-4384-9377-2d75e8366d34",
+    "9f31b66c-0384-4352-b6d1-420dfa8f7a47",
+    "074b84a7-b33c-411c-984d-352852cef22a",
+    "implement-20260904T122100Z",
+    "ab5f179d-ed90-4909-880f-5b415b2fee22",
+    "cost-report-20260904T130500Z"
+  ],
+  "executions": [
+    {
+      "phase": "orchestrator",
+      "agent": "app-idea-orchestrator",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "orchestrator-20260904",
+      "executedAt": "2026-09-04T12:08:00.000Z",
+      "status": "in_progress",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "context-scout",
+      "agent": "codebase-context-scout",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "44e81cd9-df50-4583-bd1c-d90797e37067",
+      "executedAt": "2026-09-04T12:09:00.000Z",
+      "status": "completed",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "brainstorm",
+      "agent": "speckit-brainstorm",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "Claude Sonnet 5",
+      "executionId": "8f99be9a-e74a-47cd-ac62-61bab67c1b50",
+      "executedAt": "2026-09-04T12:11:00.000Z",
+      "status": "completed",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "specify",
+      "agent": "speckit-specify",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "Cursor Grok 4.6",
+      "executionId": "bf6413f5-3808-4376-9c3f-12d6f9e9ec36",
+      "executedAt": "2026-09-04T12:13:00.000Z",
+      "status": "completed",
+      "notes": "two resume edits same execution id",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "plan",
+      "agent": "speckit-plan",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "759f52d9-9326-4384-9377-2d75e8366d34",
+      "executedAt": "2026-09-04T12:16:00.000Z",
+      "status": "completed",
+      "notes": "one resume edit same execution id",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "tasks",
+      "agent": "speckit-tasks",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "9f31b66c-0384-4352-b6d1-420dfa8f7a47",
+      "executedAt": "2026-09-04T12:19:00.000Z",
+      "status": "completed",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "implement",
+      "agent": "speckit-implement",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "claude-sonnet-5-thinking",
+      "executionId": "074b84a7-b33c-411c-984d-352852cef22a",
+      "executedAt": "2026-09-04T12:21:00.000Z",
+      "status": "completed",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "implement",
+      "agent": "speckit-implement-worker",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "implement-20260904T122100Z",
+      "executedAt": "2026-09-04T12:21:00.000Z",
+      "status": "completed",
+      "taskId": "T001-T022",
+      "wave": "all",
+      "attempt": 1,
+      "notes": "worker tool unavailable; direct execution",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "quality-guard",
+      "agent": "speckit-quality-guard",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "unavailable",
+      "executionId": "ab5f179d-ed90-4909-880f-5b415b2fee22",
+      "executedAt": "2026-09-04T12:45:00.000Z",
+      "status": "completed",
+      "evidence": "native usage null; Cursor JSONL present but cursor-local has no supported transcript parser (parseTranscript=null); do not estimate from text"
+    },
+    {
+      "phase": "cost-report",
+      "agent": "speckit-cost-report",
+      "runtime": "cursor-local",
+      "requestedModel": "inherit",
+      "actualModel": "Cursor Grok 4.6",
+      "executionId": "cost-report-20260904T130500Z",
+      "executedAt": "2026-09-04T13:05:00.000Z",
+      "status": "completed",
+      "evidence": "reporter usage not isolated from host chat; native usage null"
+    }
+  ],
+  "costReporting": {
+    "strict": false,
+    "pricingCatalog": "/Users/ahmedmohamed/.agents/speckit-toolkit/config/pricing-catalog.json",
+    "pricingOverride": null,
+    "catalogAsOf": "2026-07-13"
+  }
+}

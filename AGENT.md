@@ -1,5 +1,7 @@
 # Agent Guide
 
+Engineering standards and workflow skills live in `AGENTS.md` and `.cursor/skills/`. Architecture and API reference live in `docs/`.
+
 ## Project Overview
 
 Baby Tube is a curated YouTube video player for children. It has a public home page grouped by content categories, an optional parent-managed watch queue, a watch page with clip enforcement and a 15-minute screen-time timer, and an admin area for adding, editing, deleting, bulk uploading, tagging, queueing, and importing YouTube playlist videos.
@@ -81,6 +83,20 @@ pnpm run dev
 - `app/api/queue/route.ts`: public queue read and admin-only queue update for the ordered watch queue.
 
 ## Data Model
+
+Child profiles and their per-video progress live in `child_profiles` / `video_progress`
+(relational, not JSONB — see `docs/architecture.md` §Data and
+`docs/decisions/001-relational-child-profiles.md`). That change shipped as this repo's first
+migration-file-based schema change: `pnpm run db:generate` produced `drizzle/0000`–`0002`
+(baseline snapshot, new tables, hand-authored backfill+drop). Apply those with
+`pnpm run db:migrate` — **not** `db:push` — since `db:push` cannot run the hand-authored
+backfill or drop the legacy `app_settings.child_profiles` column. Before running
+`db:migrate` against any environment with existing data, run the exact
+`information_schema.columns` pre-flight check in `docs/architecture.md`; migrate only when
+it returns zero missing/mismatched columns. Note: the
+`docker-compose.yml` startup flow still runs `db:push` on its own — a local Docker volume
+with real profile data needs `pnpm run db:migrate` run once, manually, to actually backfill
+and drop the old column.
 
 The main table is `videos`:
 

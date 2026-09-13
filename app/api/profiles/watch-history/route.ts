@@ -1,61 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { appSettings, type AppSettings, type ChildProfile } from "@/db/schema";
+import { appendWatchHistory, listChildProfiles } from "@/lib/child-profiles-server";
 import { loadContentCategories } from "@/lib/categories-server";
-import { createProfilesRead, watchHistoryInput } from "@/lib/validation";
-
-const SETTINGS_ID = 1;
-const MAX_HISTORY_ITEMS = 100;
-
-async function getOrCreateSettings(): Promise<AppSettings> {
-  const [existing] = await db
-    .select()
-    .from(appSettings)
-    .where(eq(appSettings.id, SETTINGS_ID));
-
-  if (existing) return existing;
-
-  const [created] = await db
-    .insert(appSettings)
-    .values({ id: SETTINGS_ID })
-    .onConflictDoNothing()
-    .returning();
-
-  if (created) return created;
-
-  const [row] = await db
-    .select()
-    .from(appSettings)
-    .where(eq(appSettings.id, SETTINGS_ID));
-
-  if (!row) throw new Error("Unable to load profiles");
-
-  return row;
-}
-
-function appendWatchHistory(
-  profiles: readonly ChildProfile[],
-  profileId: string,
-  videoId: number,
-  title: string,
-  status: "completed" | "skipped",
-  watchedSeconds: number,
-): ChildProfile[] {
-  const watchedAt = new Date().toISOString();
-
-  return profiles.map((profile) => {
-    if (profile.id !== profileId) return profile;
-
-    return {
-      ...profile,
-      watchHistory: [
-        { videoId, title, watchedAt, status, watchedSeconds },
-        ...profile.watchHistory,
-      ].slice(0, MAX_HISTORY_ITEMS),
-    };
-  });
-}
+import { watchHistoryInput } from "@/lib/validation";
 
 export async function POST(req: NextRequest): Promise<Response> {
   const body = await req.json();
@@ -65,25 +11,15 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const settings = await getOrCreateSettings();
+  await appendWatchHistory(parsed.data.profileId, {
+    videoId: parsed.data.videoId,
+    title: parsed.data.title,
+    status: parsed.data.status,
+    watchedSeconds: parsed.data.watchedSeconds,
+  });
+
   const allowed = await loadContentCategories();
-  const profiles = createProfilesRead(allowed).parse({
-    childProfiles: settings.childProfiles,
-  }).childProfiles;
-  const childProfiles = appendWatchHistory(
-    profiles,
-    parsed.data.profileId,
-    parsed.data.videoId,
-    parsed.data.title,
-    parsed.data.status,
-    parsed.data.watchedSeconds,
-  );
+  const childProfiles = await listChildProfiles(allowed);
 
-  const [updated] = await db
-    .update(appSettings)
-    .set({ childProfiles })
-    .where(eq(appSettings.id, SETTINGS_ID))
-    .returning();
-
-  return NextResponse.json({ childProfiles: updated.childProfiles });
+  return NextResponse.json({ childProfiles });
 }

@@ -1,14 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { appSettings, videos, type AppSettings } from "@/db/schema";
+import { childProfiles, videos, type AppSettings } from "@/db/schema";
 import {
   DEFAULT_CONTENT_CATEGORIES,
   normalizeCategoryList,
   normalizeCategoryName,
 } from "@/lib/categories";
 import { getOrCreateSettings } from "@/lib/app-settings-server";
-
-const SETTINGS_ID = 1;
 
 export function resolveContentCategories(
   settings: Pick<AppSettings, "contentCategories">,
@@ -72,10 +70,9 @@ export async function applyCategoryListUpdate(
     }
   }
 
-  const settings = await getOrCreateSettings();
-  let profilesChanged = false;
+  const profiles = await db.select().from(childProfiles);
 
-  const nextProfiles = settings.childProfiles.map((profile) => {
+  for (const profile of profiles) {
     let preferred = [...profile.preferredCategories];
 
     if (rename) {
@@ -87,22 +84,14 @@ export async function applyCategoryListUpdate(
     }
 
     if (preferred.join("\0") === profile.preferredCategories.join("\0")) {
-      return profile;
+      continue;
     }
 
-    profilesChanged = true;
-    return { ...profile, preferredCategories: preferred };
-  });
-
-  if (!profilesChanged) return;
-
-  await db
-    .insert(appSettings)
-    .values({ id: SETTINGS_ID, childProfiles: nextProfiles })
-    .onConflictDoUpdate({
-      target: appSettings.id,
-      set: { childProfiles: nextProfiles },
-    });
+    await db
+      .update(childProfiles)
+      .set({ preferredCategories: preferred })
+      .where(eq(childProfiles.id, profile.id));
+  }
 }
 
 export function validateCategoryRename(

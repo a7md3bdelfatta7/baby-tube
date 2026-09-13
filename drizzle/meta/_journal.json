@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788525353056,
+      "tag": "0000_low_marvel_zombies",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788525406214,
+      "tag": "0001_eager_warstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788525459058,
+      "tag": "0002_backfill_child_profiles_video_progress",
+      "breakpoints": true
+    }
+  ]
+}

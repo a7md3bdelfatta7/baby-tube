@@ -1,5 +1,6 @@
 # Claude Guide
 
-Import and follow the project instructions in `AGENT.md`.
+Import and follow the project instructions in `AGENTS.md` and `AGENT.md`.
 
+@AGENTS.md
 @AGENT.md

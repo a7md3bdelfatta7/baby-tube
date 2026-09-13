@@ -4,14 +4,26 @@ import type { ReactElement } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Home, SkipForward } from "lucide-react";
 import { BreakModeScreen } from "@/components/BreakModeScreen";
 import { Player } from "@/components/Player";
-import { getProfiles, getQueue, listVideos, recordWatchHistory } from "@/lib/api";
+import {
+  getProfiles,
+  getQueue,
+  listVideos,
+  recordWatchHistory,
+  saveVideoProgress,
+} from "@/lib/api";
 import { useActiveChildProfile } from "@/lib/profiles";
 import { getSessionPlaybackQueue, getVisibleVideos } from "@/lib/queue";
 import { useWatchTimer } from "@/lib/timer-store";
+import {
+  getSavedVideoProgress,
+  isTrackableVideo,
+  shouldOfferResume,
+} from "@/lib/video-progress";
+import { VIDEO_PROGRESS_SAVE_INTERVAL_MS } from "@/lib/config/video-progress";
 import { extractVideoId, thumbnailFor } from "@/lib/youtube";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -39,6 +51,9 @@ export default function WatchPage({
   const { expired } = useWatchTimer();
   const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
   const [currentWatchedSeconds, setCurrentWatchedSeconds] = useState(0);
+  const [isTrackable, setIsTrackable] = useState(false);
+  const latestPlaybackRef = useRef({ positionSeconds: 0, durationSeconds: 0 });
+  const lastProgressSaveRef = useRef(0);
   const useSessionQueue = queueMode === "session";
 
   const { data: videos } = useQuery({
@@ -57,6 +72,9 @@ export default function WatchPage({
   const history = useMutation({
     mutationFn: recordWatchHistory,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profiles"] }),
+  });
+  const progress = useMutation({
+    mutationFn: saveVideoProgress,
   });
 
   const { current, currentIdx, next, prev, isLast, isQueueActive } = useMemo(() => {
@@ -92,6 +110,107 @@ export default function WatchPage({
 
   useEffect(() => {
     setCurrentWatchedSeconds(0);
+    setIsTrackable(false);
+    latestPlaybackRef.current = { positionSeconds: 0, durationSeconds: 0 };
+    lastProgressSaveRef.current = 0;
+  }, [id]);
+
+  const appliedResumeRef = useRef<{
+    videoId: number;
+    seconds: number | null;
+  } | null>(null);
+
+  const savedProgress = useMemo(() => {
+    if (!activeProfile || !current) return null;
+
+    return getSavedVideoProgress(activeProfile.videoProgress, current.id);
+  }, [activeProfile, current]);
+
+  const resumePositionSeconds = useMemo(() => {
+    if (!current || !profiles) return null;
+
+    if (appliedResumeRef.current?.videoId === current.id) {
+      return appliedResumeRef.current.seconds;
+    }
+
+    const seconds =
+      savedProgress &&
+      shouldOfferResume(
+        savedProgress.positionSeconds,
+        savedProgress.totalSeconds,
+        current.startSeconds,
+        current.endSeconds,
+      )
+        ? savedProgress.positionSeconds
+        : null;
+
+    appliedResumeRef.current = { videoId: current.id, seconds };
+    return seconds;
+  }, [current, profiles, savedProgress]);
+
+  const persistProgress = useCallback(
+    (input: {
+      positionSeconds: number;
+      durationSeconds: number;
+      clear?: boolean;
+    }): void => {
+      if (!activeProfile || !current) return;
+      if (!input.clear && !isTrackableVideo(input.durationSeconds)) return;
+
+      progress.mutate({
+        profileId: activeProfile.id,
+        videoId: current.id,
+        positionSeconds: Math.floor(input.positionSeconds),
+        totalSeconds: Math.floor(input.durationSeconds),
+        clear: input.clear,
+      });
+    },
+    [activeProfile, current, progress.mutate],
+  );
+
+  const handlePlaybackTick = useCallback(
+    (positionSeconds: number, durationSeconds: number): void => {
+      latestPlaybackRef.current = { positionSeconds, durationSeconds };
+
+      if (!activeProfile || !current || !isTrackableVideo(durationSeconds)) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastProgressSaveRef.current < VIDEO_PROGRESS_SAVE_INTERVAL_MS) return;
+
+      lastProgressSaveRef.current = now;
+      persistProgress({ positionSeconds, durationSeconds });
+    },
+    [activeProfile, current, persistProgress],
+  );
+
+  const leaveSaveRef = useRef({
+    isTrackable: false,
+    profileId: null as string | null,
+    videoId: null as number | null,
+  });
+  leaveSaveRef.current = {
+    isTrackable,
+    profileId: activeProfile?.id ?? null,
+    videoId: current?.id ?? null,
+  };
+
+  useEffect(() => {
+    return () => {
+      const leave = leaveSaveRef.current;
+      if (!leave.isTrackable || !leave.profileId || leave.videoId == null) return;
+
+      const { positionSeconds, durationSeconds } = latestPlaybackRef.current;
+      if (!isTrackableVideo(durationSeconds)) return;
+
+      void saveVideoProgress({
+        profileId: leave.profileId,
+        videoId: leave.videoId,
+        positionSeconds: Math.floor(positionSeconds),
+        totalSeconds: Math.floor(durationSeconds),
+      });
+    };
   }, [id]);
 
   const goNext = (
@@ -105,6 +224,15 @@ export default function WatchPage({
         status,
         watchedSeconds,
       });
+
+      const { positionSeconds, durationSeconds } = latestPlaybackRef.current;
+      if (isTrackableVideo(durationSeconds)) {
+        persistProgress({
+          positionSeconds,
+          durationSeconds,
+          clear: status === "completed",
+        });
+      }
     }
 
     const queueSuffix = useSessionQueue ? "?queue=session" : "";
@@ -215,8 +343,13 @@ export default function WatchPage({
               videoUrl={current.videoUrl}
               startSeconds={current.startSeconds}
               endSeconds={current.endSeconds}
+              initialPositionSeconds={resumePositionSeconds}
               onEnded={goNext}
               onProgress={setCurrentWatchedSeconds}
+              onDurationKnown={(durationSeconds) => {
+                setIsTrackable(isTrackableVideo(durationSeconds));
+              }}
+              onPlaybackTick={handlePlaybackTick}
             />
           </div>
         )}
