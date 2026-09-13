@@ -12,6 +12,7 @@ import {
   RotateCcw,
   SkipForward,
 } from "lucide-react";
+import { TheaterModeIcon } from "@/components/icons/TheaterModeIcon";
 import { extractVideoId } from "@/lib/youtube";
 import { timerStore } from "@/lib/timer-store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,6 +28,8 @@ type Props = {
   onProgress?: (watchedSeconds: number) => void;
   onDurationKnown?: (durationSeconds: number) => void;
   onPlaybackTick?: (positionSeconds: number, durationSeconds: number) => void;
+  isTheaterMode?: boolean;
+  onToggleTheaterMode?: () => void;
 };
 
 function formatTime(seconds: number): string {
@@ -46,6 +49,8 @@ export function Player({
   onProgress,
   onDurationKnown,
   onPlaybackTick,
+  isTheaterMode = false,
+  onToggleTheaterMode,
 }: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -386,7 +391,7 @@ export function Player({
               "hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_24px_60px_rgba(255,255,255,0.25)]",
             )}
           >
-            <Play className="mr-2 size-6 fill-current" aria-hidden />
+            <Play className="mr-2 size-8 fill-current" aria-hidden />
             {isReady
               ? hasResumePosition
                 ? "Continue watching"
@@ -451,6 +456,18 @@ export function Player({
             >
               <SkipForward className="size-5 fill-current" aria-hidden />
             </Button>
+            {onToggleTheaterMode ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-lg"
+                onClick={onToggleTheaterMode}
+                className="size-12 rounded-full bg-white/90 text-[color:var(--tots-ink)] shadow-xl hover:bg-white"
+                aria-label={isTheaterMode ? "Exit theater mode" : "Theater mode"}
+              >
+                <TheaterModeIcon className="size-7" />
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="secondary"
