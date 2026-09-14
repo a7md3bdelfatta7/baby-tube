@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 type WatchQueueProps = {
   playlist: Video[];
   currentVideoId: number;
-  isQueueActive: boolean;
   useSessionQueue: boolean;
   sticky: boolean;
 };
@@ -18,24 +17,16 @@ type WatchQueueProps = {
 export function WatchQueue({
   playlist,
   currentVideoId,
-  isQueueActive,
   useSessionQueue,
   sticky,
 }: WatchQueueProps): ReactElement {
   return (
     <aside
       className={cn(
-        "min-w-0 rounded-[1.75rem] border border-white/60 bg-white/75 p-3 shadow-[0_18px_40px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] backdrop-blur-xl",
-        sticky && "lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
+        "min-w-0",
+        sticky && "lg:sticky lg:top-6",
       )}
     >
-      <p className="px-1 pb-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-        {isQueueActive
-          ? useSessionQueue
-            ? "Playing from this category"
-            : "Today's queue"
-          : "All shows"}
-      </p>
       <div className="space-y-2">
         {playlist.map((video, idx) => (
           <QueueRow
@@ -76,7 +67,9 @@ function QueueRow({
       className={cn(
         "group flex items-center gap-3 rounded-2xl p-2 outline-none transition-colors",
         "focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
-        isActive ? "bg-[color:var(--tots-mint)]/25" : "hover:bg-black/[0.03]",
+        isActive
+          ? "bg-[color:var(--tots-mint)]/50 ring-1 ring-[color:var(--tots-mint)]"
+          : "hover:bg-black/[0.03]",
       )}
     >
       <div

@@ -3,8 +3,9 @@
 import type { ReactElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Sparkles } from "lucide-react";
+import { Home, Moon, Sun, Sparkles } from "lucide-react";
 import { useWatchTimer } from "@/lib/timer-store";
 import { getProfiles, getSettings } from "@/lib/api";
 import { useActiveChildProfile } from "@/lib/profiles";
@@ -164,14 +165,14 @@ export function WatchTimerBar(): ReactElement | null {
   const { Icon } = timer.state;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-4 pt-2 sm:px-6">
+    <div className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-2 sm:px-6">
       <div
         className={cn(
-          "mx-auto max-w-3xl overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/85 shadow-[0_20px_50px_-15px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur-xl",
+          "mx-auto max-w-md overflow-hidden rounded-[1.25rem] border border-white/60 bg-white/85 shadow-[0_16px_40px_-15px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur-xl",
         )}
       >
         {/* progress bar */}
-        <div className="relative h-2 w-full bg-black/[0.05]" aria-hidden>
+        <div className="relative h-1.5 w-full bg-black/[0.05]" aria-hidden>
           <div
             className="h-full rounded-r-full transition-[width] duration-500 ease-linear"
             style={{
@@ -181,31 +182,35 @@ export function WatchTimerBar(): ReactElement | null {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3.5 sm:flex-nowrap sm:gap-4 sm:px-5">
+        <div className="flex items-center gap-2 px-3 py-2">
           <div
             className={cn(
-              "flex size-12 shrink-0 items-center justify-center rounded-2xl shadow-inner ring-1 ring-black/[0.05]",
+              "flex size-8 shrink-0 items-center justify-center rounded-xl shadow-inner ring-1 ring-black/[0.05]",
               timer.state.chip,
             )}
           >
-            <Icon className="size-6" aria-hidden />
+            <Icon className="size-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
               {timer.activeProfileName
                 ? `${timer.state.label} for ${timer.activeProfileName}`
                 : timer.state.label}
             </p>
-            <p className="font-display text-3xl font-bold tabular-nums leading-none tracking-tight text-foreground sm:text-4xl">
+            <p className="font-display text-lg font-bold tabular-nums leading-none tracking-tight text-foreground">
               {timer.expired ? "0:00" : fmt(timer.remaining)}
             </p>
           </div>
-          <span
-            className="hidden text-2xl animate-float-slow sm:inline-block"
-            aria-hidden
+          <Link
+            href="/"
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[color:var(--tots-ink)] px-3 py-2 text-xs font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 transition",
+              "hover:-translate-y-0.5 hover:brightness-110",
+            )}
           >
-            {timer.emoji}
-          </span>
+            <Home className="size-3.5" />
+            Home
+          </Link>
         </div>
       </div>
     </div>

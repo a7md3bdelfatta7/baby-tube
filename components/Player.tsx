@@ -30,6 +30,8 @@ type Props = {
   onPlaybackTick?: (positionSeconds: number, durationSeconds: number) => void;
   isTheaterMode?: boolean;
   onToggleTheaterMode?: () => void;
+  initialFullscreen?: boolean;
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 };
 
 function formatTime(seconds: number): string {
@@ -51,6 +53,8 @@ export function Player({
   onPlaybackTick,
   isTheaterMode = false,
   onToggleTheaterMode,
+  initialFullscreen = false,
+  onFullscreenChange,
 }: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -111,13 +115,29 @@ export function Player({
 
   useEffect(() => {
     const syncFullscreenState = (): void => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current);
+      const isFs = document.fullscreenElement === containerRef.current;
+      setIsFullscreen(isFs);
+      onFullscreenChange?.(isFs);
     };
 
     document.addEventListener("fullscreenchange", syncFullscreenState);
     return () => {
       document.removeEventListener("fullscreenchange", syncFullscreenState);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onFullscreenChange identity may change without needing a re-subscribe
+  }, []);
+
+  useEffect(() => {
+    if (!initialFullscreen || document.fullscreenElement) return;
+
+    // Best effort: browsers only grant this without a fresh user gesture
+    // when one is still active from the navigation that brought us here
+    // (e.g. clicking "next"); it silently no-ops otherwise.
+    containerRef.current?.requestFullscreen().catch(() => {
+      /* fullscreen requires an active user gesture in most browsers */
+    });
+    // Only attempt this once, when the player for this video mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, []);
 
   if (!id) {

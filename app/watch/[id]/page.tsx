@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Home, SkipForward } from "lucide-react";
+import { Home } from "lucide-react";
 import { BreakModeScreen } from "@/components/BreakModeScreen";
 import { Player } from "@/components/Player";
 import { WatchQueue } from "@/components/WatchQueue";
@@ -25,6 +25,12 @@ import {
   isTrackableVideo,
   shouldOfferResume,
 } from "@/lib/video-progress";
+import {
+  getFullscreenPreference,
+  getTheaterModePreference,
+  setFullscreenPreference,
+  setTheaterModePreference,
+} from "@/lib/watch-preferences";
 import { VIDEO_PROGRESS_SAVE_INTERVAL_MS } from "@/lib/config/video-progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -42,7 +48,7 @@ export default function WatchPage({
   const queryClient = useQueryClient();
   const { expired } = useWatchTimer();
   const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
-  const [theaterMode, setTheaterMode] = useState(false);
+  const [theaterMode, setTheaterMode] = useState(() => getTheaterModePreference());
   const [currentWatchedSeconds, setCurrentWatchedSeconds] = useState(0);
   const [isTrackable, setIsTrackable] = useState(false);
   const latestPlaybackRef = useRef({ positionSeconds: 0, durationSeconds: 0 });
@@ -277,31 +283,6 @@ export default function WatchPage({
 
   return (
     <main className="mx-auto max-w-[1800px] px-4 pb-20 pt-6 md:pt-8">
-      {/* Top nav pill */}
-      <div className="mb-6 flex items-center justify-between gap-3 rounded-full border border-white/60 bg-white/75 px-2 py-2 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:px-3">
-        <Link
-          href="/"
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] transition",
-            "hover:-translate-y-0.5 hover:shadow-md",
-          )}
-        >
-          <ArrowLeft className="size-4 text-[color:var(--tots-ink)]" />
-          Home
-        </Link>
-        <button
-          type="button"
-          onClick={() => goNext("skipped", currentWatchedSeconds)}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-5 py-2.5 text-sm font-semibold text-[color:var(--tots-cream)] shadow-lg shadow-[color:var(--tots-ink)]/25 transition",
-            "hover:-translate-y-0.5 hover:brightness-110",
-          )}
-        >
-          {next ? "Next show" : "Finish"}
-          <SkipForward className="size-4" />
-        </button>
-      </div>
-
       <div
         className={cn(
           "grid gap-6",
@@ -351,7 +332,15 @@ export default function WatchPage({
                   }}
                   onPlaybackTick={handlePlaybackTick}
                   isTheaterMode={theaterMode}
-                  onToggleTheaterMode={() => setTheaterMode((v) => !v)}
+                  onToggleTheaterMode={() =>
+                    setTheaterMode((v) => {
+                      const next = !v;
+                      setTheaterModePreference(next);
+                      return next;
+                    })
+                  }
+                  initialFullscreen={getFullscreenPreference()}
+                  onFullscreenChange={setFullscreenPreference}
                 />
               </div>
             )}
@@ -380,7 +369,6 @@ export default function WatchPage({
         <WatchQueue
           playlist={playlist}
           currentVideoId={current.id}
-          isQueueActive={isQueueActive}
           useSessionQueue={useSessionQueue}
           sticky={!theaterMode}
         />
