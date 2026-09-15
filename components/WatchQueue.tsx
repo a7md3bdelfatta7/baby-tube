@@ -24,7 +24,7 @@ export function WatchQueue({
     <aside
       className={cn(
         "min-w-0",
-        sticky && "lg:sticky lg:top-6",
+        sticky && "lg:sticky lg:top-20",
       )}
     >
       <div className="space-y-2">

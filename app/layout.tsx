@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import { AppBackdrop } from "@/components/AppBackdrop";
+import { AppHeader } from "@/components/AppHeader";
 import { QueryProvider } from "@/components/QueryProvider";
 import { WatchTimerBar } from "@/components/WatchTimer";
 import { Geist, Quicksand } from "next/font/google";
@@ -60,9 +61,10 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: REDUCE_FX_BOOTSTRAP }} />
       </head>
-      <body className="relative min-h-screen pb-32">
+      <body className="relative min-h-screen pb-32 pt-16">
         <AppBackdrop />
         <QueryProvider>
+          <AppHeader />
           {children}
           <WatchTimerBar />
         </QueryProvider>

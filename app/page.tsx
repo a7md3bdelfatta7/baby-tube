@@ -5,14 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Baby,
-  Clapperboard,
-  Headphones,
-  Play,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { Baby, Clapperboard, Play, Sparkles } from "lucide-react";
 import type { ChildProfile, Video } from "@/db/schema";
 import { formatAge } from "@/lib/age";
 import { getProfiles, getQueue, listVideos } from "@/lib/api";
@@ -27,7 +20,6 @@ import { extractVideoId, thumbnailFor } from "@/lib/youtube";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BrandLogo } from "@/components/BrandLogo";
 import { WatchTimerCard } from "@/components/WatchTimer";
 import { useContentCategories } from "@/lib/use-content-categories";
 import { cn } from "@/lib/utils";
@@ -97,10 +89,6 @@ export default function HomePage(): ReactElement {
     queryFn: getProfiles,
   });
   const activeProfile = useActiveChildProfile(profiles?.childProfiles);
-  const hasSongs = useMemo(
-    () => (videos ?? []).some((video) => video.categories.includes("Songs")),
-    [videos],
-  );
   const visible = useMemo(
     () =>
       videos
@@ -137,8 +125,6 @@ export default function HomePage(): ReactElement {
 
   return (
     <main className="mx-auto max-w-[1500px] px-4 pb-10 pt-4 md:px-6 md:pt-6">
-      <TopNav hasSongs={hasSongs} />
-
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] xl:grid-cols-[minmax(0,1fr)_21rem]">
         <section aria-labelledby="videos-heading" className="min-w-0">
           <LibraryHeader
@@ -277,7 +263,7 @@ function HomeSidebar({
   isQueueActive: boolean;
 }): ReactElement {
   return (
-    <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+    <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
       <section className="overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,20 +292,6 @@ function HomeSidebar({
       <ProfileSelector profiles={profiles} activeProfile={activeProfile} />
 
       <WatchTimerCard />
-
-      <Link
-        href="/admin"
-        className={cn(
-          "flex items-center justify-between rounded-[1.5rem] border border-white/60 bg-white/70 px-4 py-3 text-sm font-semibold text-foreground shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl transition",
-          "hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_-24px_rgba(61,61,92,0.42)]",
-        )}
-      >
-        <span className="inline-flex items-center gap-2">
-          <Settings2 className="size-4 text-[color:var(--tots-ink)]" />
-          Parents panel
-        </span>
-        <span aria-hidden>→</span>
-      </Link>
     </aside>
   );
 }
@@ -396,7 +368,7 @@ function CategoryFilterBar({
 }): ReactElement {
   return (
     <div
-      className="sticky top-2 z-20 -mx-4 mb-5 overflow-x-auto px-4 pb-2 pt-1"
+      className="sticky top-16 z-20 -mx-4 mb-5 overflow-x-auto px-4 pb-2 pt-3"
       aria-label="Filter videos by category"
     >
       <div className="flex min-w-max gap-2">
@@ -549,38 +521,6 @@ function VideoCard({
         </div>
       </article>
     </Link>
-  );
-}
-
-function TopNav({ hasSongs }: { hasSongs: boolean }): ReactElement {
-  return (
-    <div className="mb-5 flex items-center justify-between gap-3 rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:mb-6 md:px-4 md:py-3">
-      <BrandLogo size="md" />
-      <div className="flex items-center gap-2">
-        {hasSongs ? (
-          <Link
-            href="/listen"
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full bg-[color:var(--tots-ink)] px-4 py-2 text-xs font-semibold text-[color:var(--tots-cream)] shadow-sm transition",
-              "hover:-translate-y-0.5 hover:brightness-110",
-              "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
-            )}
-            aria-label="Enter listening mode"
-          >
-            <Headphones className="size-3.5" aria-hidden />
-            <span className="hidden sm:inline">Listening mode</span>
-            <span className="sm:hidden">Listen</span>
-          </Link>
-        ) : null}
-        <Badge
-          variant="secondary"
-          className="hidden rounded-full border-0 bg-white/70 px-4 py-1.5 text-xs font-medium text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur sm:inline-flex"
-        >
-          <Sparkles className="mr-1.5 size-3.5 text-[color:var(--tots-ink)]" />
-          Pick a happy show
-        </Badge>
-      </div>
-    </div>
   );
 }
 

@@ -2,9 +2,8 @@
 
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Pause, Play, SkipForward } from "lucide-react";
+import { Pause, Play, SkipForward } from "lucide-react";
 import type { Video } from "@/db/schema";
 import { listVideos } from "@/lib/api";
 import { ListeningPlayer } from "@/components/ListeningPlayer";
@@ -86,23 +85,13 @@ export default function ListenPage(): ReactElement {
   return (
     <main
       className={cn(
-        "relative flex min-h-[100dvh] flex-col overflow-hidden",
+        "relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden",
         "bg-gradient-to-br from-[color:var(--tots-lavender)] via-[color:var(--tots-sky)] to-[color:var(--tots-mint)]",
       )}
     >
       <BackgroundBlobs />
 
-      <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-4 pt-4 md:px-6 md:pt-6">
-        <Link
-          href="/"
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-sm font-semibold text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur transition",
-            "hover:-translate-y-0.5 hover:bg-white",
-          )}
-        >
-          <Home className="size-4" aria-hidden />
-          Home
-        </Link>
+      <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-end px-4 pt-4 md:px-6 md:pt-6">
         <span className="rounded-full border-0 bg-white/70 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur">
           Listening mode
         </span>

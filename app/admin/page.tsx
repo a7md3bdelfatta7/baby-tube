@@ -3,17 +3,15 @@ import Link from "next/link";
 import { Settings2, ArrowLeft } from "lucide-react";
 import { AdminGate } from "@/components/AdminGate";
 import { AdminPanel } from "@/components/AdminPanel";
-import { BrandLogo } from "@/components/BrandLogo";
 
 export default function AdminPage(): ReactElement {
   return (
     <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 md:pt-8">
-      {/* Top nav */}
-      <div className="mb-8 flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-3 py-2.5 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.03] backdrop-blur-xl md:px-4">
-        <BrandLogo size="md" />
+      {/* Back to home */}
+      <div className="mb-8 flex justify-end">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-md"
+          className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <ArrowLeft className="size-4 text-[color:var(--tots-ink)]" />
           <span className="hidden sm:inline">Home</span>

@@ -282,7 +282,7 @@ export default function WatchPage({
   const tone = currentIdx >= 0 ? PASTELS[currentIdx % PASTELS.length] : PASTELS[0];
 
   return (
-    <main className="mx-auto max-w-[1800px] px-4 pb-20 pt-6 md:pt-8">
+    <main className="mx-auto max-w-[1600px] px-4 pb-20 pt-6 md:pt-8">
       <div
         className={cn(
           "grid gap-6",
