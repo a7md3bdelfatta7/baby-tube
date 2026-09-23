@@ -27,8 +27,10 @@ import {
 } from "@/lib/video-progress";
 import {
   getFullscreenPreference,
+  getShufflePreference,
   getTheaterModePreference,
   setFullscreenPreference,
+  setShufflePreference,
   setTheaterModePreference,
 } from "@/lib/watch-preferences";
 import { VIDEO_PROGRESS_SAVE_INTERVAL_MS } from "@/lib/config/video-progress";
@@ -49,6 +51,7 @@ export default function WatchPage({
   const { expired } = useWatchTimer();
   const [sessionQueueIds] = useState<number[]>(() => getSessionPlaybackQueue());
   const [theaterMode, setTheaterMode] = useState(() => getTheaterModePreference());
+  const [isShuffled, setIsShuffled] = useState(() => getShufflePreference());
   const [currentWatchedSeconds, setCurrentWatchedSeconds] = useState(0);
   const [isTrackable, setIsTrackable] = useState(false);
   const latestPlaybackRef = useRef({ positionSeconds: 0, durationSeconds: 0 });
@@ -93,17 +96,28 @@ export default function WatchPage({
     );
     const idx = visible.videos.findIndex((v) => String(v.id) === String(id));
 
+    let nextVideo = null;
+    if (idx >= 0) {
+      if (isShuffled && visible.videos.length > 1) {
+        const otherIndices = visible.videos
+          .map((_, i) => i)
+          .filter((i) => i !== idx);
+        const randomIdx =
+          otherIndices[Math.floor(Math.random() * otherIndices.length)];
+        nextVideo = visible.videos[randomIdx];
+      } else if (idx < visible.videos.length - 1) {
+        nextVideo = visible.videos[idx + 1];
+      }
+    }
+
     return {
       current: idx >= 0 ? visible.videos[idx] : null,
       currentIdx: idx,
-      next:
-        idx >= 0 && idx < visible.videos.length - 1
-          ? visible.videos[idx + 1]
-          : null,
+      next: nextVideo,
       isQueueActive: visible.isQueueActive,
       playlist: visible.videos,
     };
-  }, [id, queue, sessionQueueIds, useSessionQueue, videos]);
+  }, [id, isShuffled, queue, sessionQueueIds, useSessionQueue, videos]);
 
   useEffect(() => {
     setCurrentWatchedSeconds(0);
@@ -341,6 +355,14 @@ export default function WatchPage({
                   }
                   initialFullscreen={getFullscreenPreference()}
                   onFullscreenChange={setFullscreenPreference}
+                  isShuffled={isShuffled}
+                  onToggleShuffle={() =>
+                    setIsShuffled((v) => {
+                      const next = !v;
+                      setShufflePreference(next);
+                      return next;
+                    })
+                  }
                 />
               </div>
             )}

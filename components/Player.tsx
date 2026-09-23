@@ -10,6 +10,7 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Shuffle,
   SkipForward,
 } from "lucide-react";
 import { TheaterModeIcon } from "@/components/icons/TheaterModeIcon";
@@ -32,6 +33,8 @@ type Props = {
   onToggleTheaterMode?: () => void;
   initialFullscreen?: boolean;
   onFullscreenChange?: (isFullscreen: boolean) => void;
+  isShuffled?: boolean;
+  onToggleShuffle?: () => void;
 };
 
 function formatTime(seconds: number): string {
@@ -55,6 +58,8 @@ export function Player({
   onToggleTheaterMode,
   initialFullscreen = false,
   onFullscreenChange,
+  isShuffled = false,
+  onToggleShuffle,
 }: Props): ReactElement {
   const id = extractVideoId(videoUrl);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -476,6 +481,24 @@ export function Player({
             >
               <SkipForward className="size-5 fill-current" aria-hidden />
             </Button>
+            {onToggleShuffle ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-lg"
+                onClick={onToggleShuffle}
+                className={cn(
+                  "size-12 rounded-full shadow-xl",
+                  isShuffled
+                    ? "bg-[color:var(--tots-sunshine)] text-[color:var(--tots-ink)] hover:brightness-105"
+                    : "bg-white/90 text-[color:var(--tots-ink)] hover:bg-white",
+                )}
+                aria-label={isShuffled ? "Turn off shuffle" : "Turn on shuffle"}
+                aria-pressed={isShuffled}
+              >
+                <Shuffle className="size-5" aria-hidden />
+              </Button>
+            ) : null}
             {onToggleTheaterMode ? (
               <Button
                 type="button"
