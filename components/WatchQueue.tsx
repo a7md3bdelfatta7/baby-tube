@@ -69,7 +69,7 @@ function QueueRow({
         "focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
         isActive
           ? "bg-[color:var(--tots-mint)]/50 ring-1 ring-[color:var(--tots-mint)]"
-          : "hover:bg-black/[0.03]",
+          : "hover:bg-foreground/5",
       )}
     >
       <div

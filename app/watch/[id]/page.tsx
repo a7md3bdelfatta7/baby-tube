@@ -266,7 +266,7 @@ export default function WatchPage({
   if (!current) {
     return (
       <main className="mx-auto max-w-3xl px-4 pb-20 pt-8 text-center md:pt-12">
-        <div className="mx-auto max-w-md rounded-[2rem] bg-white/85 p-8 shadow-xl ring-1 ring-black/[0.04] backdrop-blur">
+        <div className="mx-auto max-w-md rounded-[2rem] bg-card/85 p-8 shadow-xl ring-1 ring-black/[0.04] backdrop-blur">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/tots-brand-kit/svg/tots-icon.svg"
@@ -308,9 +308,9 @@ export default function WatchPage({
         <div className="min-w-0">
           {/* Player frame with pastel glow */}
           <div
-            className="relative overflow-hidden rounded-[2rem] border-2 border-white/70 p-2 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur md:p-3"
+            className="relative overflow-hidden rounded-[2rem] border-2 border-border p-2 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur md:p-3"
             style={{
-              background: `linear-gradient(135deg, color-mix(in oklch, ${tone} 70%, white), white)`,
+              background: `linear-gradient(135deg, color-mix(in oklch, ${tone} 70%, var(--card)), var(--card))`,
             }}
           >
             {/* corner stickers */}

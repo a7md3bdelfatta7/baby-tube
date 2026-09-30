@@ -180,7 +180,7 @@ export function ParentDashboard(): ReactElement {
       </AdminCard>
 
       {profiles.length === 0 ? (
-        <Card className="rounded-[1.75rem] border-dashed bg-white/70 shadow-none">
+        <Card className="rounded-[1.75rem] border-dashed bg-card/70 shadow-none">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             Add child profiles to start collecting parent dashboard insights.
           </CardContent>
@@ -213,11 +213,11 @@ function InsightCard({
   detail?: string;
 }): ReactElement {
   return (
-    <div className="rounded-2xl bg-white/70 p-4 shadow-sm ring-1 ring-black/[0.04]">
+    <div className="rounded-2xl bg-card/70 p-4 shadow-sm ring-1 ring-black/[0.04]">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-2 line-clamp-2 font-display text-2xl font-bold text-[color:var(--tots-ink)]">
+      <p className="mt-2 line-clamp-2 font-display text-2xl font-bold text-foreground">
         {value}
       </p>
       {detail ? <p className="mt-1 text-xs text-muted-foreground">{detail}</p> : null}
@@ -306,7 +306,7 @@ function VideoInsightList({
   compact?: boolean;
 }): ReactElement {
   return (
-    <div className="rounded-2xl bg-white/70 p-4 shadow-sm ring-1 ring-black/[0.04]">
+    <div className="rounded-2xl bg-card/70 p-4 shadow-sm ring-1 ring-black/[0.04]">
       <p className="text-sm font-semibold">{title}</p>
       {items.length > 0 ? (
         <ol className="mt-3 space-y-2">

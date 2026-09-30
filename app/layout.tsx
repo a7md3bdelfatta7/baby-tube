@@ -40,6 +40,11 @@ export const viewport: Viewport = {
 // (e.g. cached/streamed HTML). Keeps TV browsers out of the heavy-effects path.
 const REDUCE_FX_BOOTSTRAP = `(function(){try{var d=document.documentElement;var ua=navigator.userAgent||"";if(/\\b(SMART-?TV|SmartTV|Tizen|Web0S|webOS|HbbTV|NetCast|VIDAA|BRAVIA|AppleTV|CrKey|GoogleTV|PlayStation|Xbox)\\b/i.test(ua)){d.classList.add("reduce-fx");}}catch(e){}})();`;
 
+// Runs before first paint so the correct theme (light/dark, from either an
+// explicit user choice or the local-clock daylight window) applies with no
+// flash. Mirrors the resolution logic in lib/theme-store.ts.
+const THEME_BOOTSTRAP = `(function(){try{var d=document.documentElement;var stored=localStorage.getItem("babytube.theme.v1");var mode=(stored==="light"||stored==="dark"||stored==="auto")?stored:"auto";var effective=mode;if(mode==="auto"){var h=new Date().getHours();effective=(h>=7&&h<19)?"light":"dark";}if(effective==="dark"){d.classList.add("dark");}d.style.colorScheme=effective;}catch(e){}})();`;
+
 export default async function RootLayout({
   children,
 }: {
@@ -59,6 +64,7 @@ export default async function RootLayout({
       )}
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         <script dangerouslySetInnerHTML={{ __html: REDUCE_FX_BOOTSTRAP }} />
       </head>
       <body className="relative min-h-screen pb-32 pt-16">

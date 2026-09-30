@@ -306,7 +306,7 @@ export function VideoList(): ReactElement {
         </CardHeader>
         <Separator />
         <CardContent className="space-y-4 pt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/70 p-3 ring-1 ring-black/[0.04]">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-card/70 p-3 ring-1 ring-black/[0.04]">
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
@@ -324,7 +324,7 @@ export function VideoList(): ReactElement {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select
-                className="h-8 rounded-lg border border-input bg-white/80 px-2 text-sm"
+                className="h-8 rounded-lg border border-input bg-card/80 px-2 text-sm"
                 value={bulkCategory}
                 onChange={(event) => setBulkCategory(event.target.value)}
                 aria-label="Bulk category"
@@ -394,7 +394,7 @@ export function VideoList(): ReactElement {
                           setDropTarget(null);
                         }}
                         className={cn(
-                          "grid size-8 shrink-0 cursor-grab place-items-center rounded-xl text-muted-foreground transition hover:bg-white hover:text-[color:var(--tots-ink)] active:cursor-grabbing",
+                          "grid size-8 shrink-0 cursor-grab place-items-center rounded-xl text-muted-foreground transition hover:bg-card hover:text-foreground active:cursor-grabbing",
                           reorder.isPending && "cursor-not-allowed opacity-50",
                         )}
                         aria-label={`Drag ${video.title} to reorder`}

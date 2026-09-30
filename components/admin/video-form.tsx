@@ -227,7 +227,7 @@ export function CategoryPicker({
             size="sm"
             className={cn(
               "rounded-full",
-              !selected && "bg-white/80 hover:bg-white",
+              !selected && "bg-card/80 hover:bg-card",
             )}
             aria-pressed={selected}
             onClick={() => toggle(category)}

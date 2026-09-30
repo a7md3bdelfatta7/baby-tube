@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const ADMIN_CARD_CLASS =
-  "rounded-[1.75rem] border-white/60 bg-white/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md";
+  "rounded-[1.75rem] border-border bg-card/85 shadow-[0_18px_45px_-20px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md";
 
 export function AdminCard({
   className,
@@ -30,7 +30,7 @@ export function CategoryBadges({
         <Badge
           key={category}
           variant="secondary"
-          className="rounded-full bg-white/80 px-2 py-0.5 text-[0.65rem]"
+          className="rounded-full bg-card/80 px-2 py-0.5 text-[0.65rem]"
         >
           {category}
         </Badge>

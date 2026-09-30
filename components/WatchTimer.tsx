@@ -116,8 +116,8 @@ export function WatchTimerCard(): ReactElement | null {
   const { Icon } = timer.state;
 
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/75 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
-      <div className="relative h-2 w-full bg-black/[0.05]" aria-hidden>
+    <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card/75 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
+      <div className="relative h-2 w-full bg-foreground/10" aria-hidden>
         <div
           className="h-full rounded-r-full transition-[width] duration-500 ease-linear"
           style={{
@@ -168,11 +168,11 @@ export function WatchTimerBar(): ReactElement | null {
     <div className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-4 pt-2 sm:px-6">
       <div
         className={cn(
-          "mx-auto max-w-xl overflow-hidden rounded-[1.5rem] border border-white/60 bg-white/85 shadow-[0_20px_48px_-15px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur-xl",
+          "mx-auto max-w-xl overflow-hidden rounded-[1.5rem] border border-border bg-card/85 shadow-[0_20px_48px_-15px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur-xl",
         )}
       >
         {/* progress bar */}
-        <div className="relative h-2 w-full bg-black/[0.05]" aria-hidden>
+        <div className="relative h-2 w-full bg-foreground/10" aria-hidden>
           <div
             className="h-full rounded-r-full transition-[width] duration-500 ease-linear"
             style={{

@@ -49,7 +49,7 @@ export function AdminGate({
 
   if (!password) {
     return (
-      <div className="mx-auto mt-6 max-w-md overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.4)] ring-1 ring-black/[0.04] backdrop-blur-xl">
+      <div className="mx-auto mt-6 max-w-md overflow-hidden rounded-[2rem] border border-border bg-card/85 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.4)] ring-1 ring-black/[0.04] backdrop-blur-xl">
         <div className="px-6 pt-8 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -89,7 +89,7 @@ export function AdminGate({
               placeholder="Password"
               autoComplete="current-password"
               aria-invalid={error ? true : undefined}
-              className="h-12 rounded-2xl bg-white/80 px-4 text-base"
+              className="h-12 rounded-2xl bg-card/80 px-4 text-base"
             />
             {error ? (
               <Alert variant="destructive" className="rounded-2xl">
@@ -125,7 +125,7 @@ export function AdminGate({
           render={<Link href="/" />}
           variant="outline"
           size="sm"
-          className="rounded-full bg-white/80"
+          className="rounded-full bg-card/80"
         >
           <House className="size-3.5" data-icon="inline-start" />
           Home
@@ -135,7 +135,7 @@ export function AdminGate({
           variant="outline"
           size="sm"
           onClick={clear}
-          className="rounded-full bg-white/80"
+          className="rounded-full bg-card/80"
         >
           <Lock className="size-3.5" data-icon="inline-start" />
           Lock

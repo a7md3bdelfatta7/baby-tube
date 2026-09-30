@@ -69,7 +69,7 @@ export function BrandLogo({
       <span className="flex flex-col leading-none">
         <span
           className={cn(
-            "font-display font-bold tracking-tight text-[color:var(--tots-ink)]",
+            "font-display font-bold tracking-tight text-foreground",
             WORD_SIZE[size],
           )}
         >

@@ -148,7 +148,7 @@ export function ProfilesPanel(): ReactElement {
               ))}
 
               {profiles.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-white/60 p-5 text-center text-sm text-muted-foreground">
+                <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-card/60 p-5 text-center text-sm text-muted-foreground">
                   No profiles yet. Add one to personalize the child experience.
                 </p>
               ) : null}
@@ -214,7 +214,7 @@ function ProfileEditorCard({
   const birthDateValid = isValidBirthDate(profile.birthDate);
 
   return (
-    <Card className="rounded-2xl bg-white/70 shadow-none ring-1 ring-black/[0.04]">
+    <Card className="rounded-2xl bg-card/70 shadow-none ring-1 ring-black/[0.04]">
       <CardContent className="space-y-4 pt-6">
         <div className="grid gap-3 md:grid-cols-4">
           <Input

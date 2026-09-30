@@ -196,14 +196,14 @@ function LibraryHeader({
       <div>
         <Badge
           variant="secondary"
-          className="mb-3 gap-2 rounded-full border-0 bg-white/75 px-3.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
+          className="mb-3 gap-2 rounded-full border-0 bg-card/75 px-3.5 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur"
         >
           <Sparkles className="size-3.5" aria-hidden />
           {isQueueActive ? "parent-picked queue" : "kid-safe library"}
         </Badge>
         <h1
           id="videos-heading"
-          className="font-display text-3xl font-bold tracking-tight text-[color:var(--tots-ink)] md:text-4xl"
+          className="font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl"
         >
           {title}
         </h1>
@@ -264,7 +264,7 @@ function HomeSidebar({
 }): ReactElement {
   return (
     <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-      <section className="overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
+      <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -277,7 +277,7 @@ function HomeSidebar({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               {isQueueActive ? "Today only" : "Ready now"}
             </p>
-            <h2 className="font-display text-xl font-bold leading-tight text-[color:var(--tots-ink)]">
+            <h2 className="font-display text-xl font-bold leading-tight text-foreground">
               {filteredCount} of {totalCount} videos
             </h2>
           </div>
@@ -308,10 +308,10 @@ function ProfileSelector({
   return (
     <section
       aria-label="Choose child profile"
-      className="rounded-[1.75rem] border border-white/60 bg-white/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl"
+      className="rounded-[1.75rem] border border-border bg-card/70 p-4 shadow-[0_16px_40px_-24px_rgba(61,61,92,0.32)] ring-1 ring-black/[0.03] backdrop-blur-xl"
     >
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Baby className="size-4 text-[color:var(--tots-ink)]" aria-hidden />
+        <Baby className="size-4 text-foreground" aria-hidden />
         Watching as
       </div>
       <div className="grid gap-2">
@@ -332,7 +332,7 @@ function ProfileSelector({
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
                 selected
                   ? "bg-[color:var(--tots-ink)] text-[color:var(--tots-cream)]"
-                  : "bg-white/80 text-foreground hover:-translate-y-0.5 hover:bg-white",
+                  : "bg-card/80 text-foreground hover:-translate-y-0.5 hover:bg-card",
               )}
               aria-pressed={selected}
             >
@@ -385,7 +385,7 @@ function CategoryFilterBar({
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
                 isSelected
                   ? "bg-[color:var(--tots-ink)] text-[color:var(--tots-cream)]"
-                  : "bg-white/75 text-foreground backdrop-blur hover:-translate-y-0.5 hover:bg-white",
+                  : "bg-card/75 text-foreground backdrop-blur hover:-translate-y-0.5 hover:bg-card",
               )}
               aria-pressed={isSelected}
             >
@@ -450,8 +450,8 @@ function VideoCard({
     >
       <article
         className={cn(
-          "relative h-full overflow-hidden rounded-[1.5rem] bg-white/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
-          "group-hover:bg-white group-hover:shadow-[0_24px_46px_-20px_rgba(80,90,160,0.45)]",
+          "relative h-full overflow-hidden rounded-[1.5rem] bg-card/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04] transition-all duration-300",
+          "group-hover:bg-card group-hover:shadow-[0_24px_46px_-20px_rgba(80,90,160,0.45)]",
         )}
       >
         <div
@@ -530,7 +530,7 @@ function VideoGridSkeleton(): ReactElement {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-[1.5rem] bg-white/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04]"
+          className="overflow-hidden rounded-[1.5rem] bg-card/85 p-2 shadow-[0_14px_34px_-18px_rgba(80,90,160,0.35)] ring-1 ring-black/[0.04]"
         >
           <Skeleton className="aspect-video w-full rounded-[1.1rem]" />
           <div className="space-y-2 px-1 pb-1 pt-3">

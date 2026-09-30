@@ -45,7 +45,7 @@ const ADMIN_TABS: AdminTab[] = [
 ];
 
 const TAB_TRIGGER_CLASS =
-  "gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-white data-[active]:text-[color:var(--tots-ink)] data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]";
+  "gap-1.5 rounded-2xl px-4 font-medium data-[active]:bg-card data-[active]:text-foreground data-[active]:shadow-md data-[active]:ring-1 data-[active]:ring-black/[0.04]";
 
 export function AdminPanel(): ReactElement {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -57,7 +57,7 @@ export function AdminPanel(): ReactElement {
       className="flex flex-col gap-8"
     >
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <TabsList className="flex h-auto min-h-12 w-full flex-wrap justify-start gap-1.5 rounded-[1.5rem] border border-white/60 bg-white/70 p-2 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md sm:max-w-none md:flex-1">
+        <TabsList className="flex h-auto min-h-12 w-full flex-wrap justify-start gap-1.5 rounded-[1.5rem] border border-border bg-card/70 p-2 shadow-[0_10px_30px_-15px_rgba(80,90,160,0.3)] ring-1 ring-black/[0.03] backdrop-blur-md sm:max-w-none md:flex-1">
           {ADMIN_TABS.map(({ value, label, Icon }) => (
             <TabsTrigger key={value} value={value} className={TAB_TRIGGER_CLASS}>
               <Icon className="size-4" />

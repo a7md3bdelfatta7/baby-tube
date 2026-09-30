@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { Headphones, Settings2 } from "lucide-react";
 import { listVideos } from "@/lib/api";
 import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,7 +27,7 @@ export function AppHeader(): ReactElement {
   );
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/60 bg-white/80 shadow-[0_10px_30px_-18px_rgba(80,90,160,0.35)] backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/80 shadow-[0_10px_30px_-18px_rgba(80,90,160,0.35)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 md:px-6">
         <Link
           href="/"
@@ -57,17 +58,19 @@ export function AppHeader(): ReactElement {
             <Link
               href="/admin"
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2 text-xs font-semibold text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur transition",
-                "hover:-translate-y-0.5 hover:bg-white",
+                "inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-4 py-2 text-xs font-semibold text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur transition",
+                "hover:-translate-y-0.5 hover:bg-background",
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/40",
               )}
               aria-label="Open parents panel"
             >
-              <Settings2 className="size-3.5 text-[color:var(--tots-ink)]" aria-hidden />
+              <Settings2 className="size-3.5 text-[color:var(--tots-ink)] dark:text-foreground" aria-hidden />
               <span className="hidden sm:inline">Parents panel</span>
               <span className="sm:hidden">Admin</span>
             </Link>
           ) : null}
+
+          <ThemeToggle />
         </div>
       </div>
     </header>

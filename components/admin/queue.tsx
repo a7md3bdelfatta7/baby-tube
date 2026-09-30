@@ -204,7 +204,7 @@ export function QueueBuilder(): ReactElement {
                       onDragOver={(event) => handleQueueDragOver(event, video.id)}
                       onDrop={() => handleQueueDrop(video.id)}
                       className={cn(
-                        "rounded-2xl bg-white/70 shadow-none ring-1 ring-black/[0.04] transition-all",
+                        "rounded-2xl bg-card/70 shadow-none ring-1 ring-black/[0.04] transition-all",
                         draggingQueueId === video.id &&
                           "scale-[0.99] border-dashed border-primary/40 bg-muted/40 opacity-60",
                         queueDropTarget?.id === video.id &&
@@ -223,7 +223,7 @@ export function QueueBuilder(): ReactElement {
                               setDraggingQueueId(null);
                               setQueueDropTarget(null);
                             }}
-                            className="grid size-8 cursor-grab place-items-center rounded-xl text-muted-foreground transition hover:bg-white hover:text-[color:var(--tots-ink)] active:cursor-grabbing"
+                            className="grid size-8 cursor-grab place-items-center rounded-xl text-muted-foreground transition hover:bg-card hover:text-foreground active:cursor-grabbing"
                             aria-label={`Drag ${video.title} to reorder queue`}
                           >
                             <GripVertical className="size-4" aria-hidden="true" />
@@ -275,7 +275,7 @@ export function QueueBuilder(): ReactElement {
                 ))}
 
                 {selectedVideos.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-white/60 p-5 text-center text-sm text-muted-foreground">
+                  <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-card/60 p-5 text-center text-sm text-muted-foreground">
                     No queue yet. Add videos from the library list.
                   </p>
                 ) : null}
@@ -296,7 +296,7 @@ export function QueueBuilder(): ReactElement {
                 {availableVideos.map((video) => (
                   <Card
                     key={video.id}
-                    className="rounded-2xl bg-white/70 shadow-none ring-1 ring-black/[0.04]"
+                    className="rounded-2xl bg-card/70 shadow-none ring-1 ring-black/[0.04]"
                   >
                     <CardContent className="flex items-center gap-3 py-3">
                       <div className="min-w-0 flex-1">
@@ -321,7 +321,7 @@ export function QueueBuilder(): ReactElement {
                 ))}
 
                 {availableVideos.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-white/60 p-5 text-center text-sm text-muted-foreground">
+                  <p className="rounded-2xl border border-dashed border-muted-foreground/25 bg-card/60 p-5 text-center text-sm text-muted-foreground">
                     Every library video is already in the queue.
                   </p>
                 ) : null}

@@ -11,14 +11,14 @@ export default function AdminPage(): ReactElement {
       <div className="mb-8 flex justify-end">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-md"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card/75 px-4 py-2 text-sm font-semibold text-foreground shadow-sm ring-1 ring-black/[0.05] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-md"
         >
-          <ArrowLeft className="size-4 text-[color:var(--tots-ink)]" />
+          <ArrowLeft className="size-4 text-foreground" />
           <span className="hidden sm:inline">Home</span>
         </Link>
       </div>
 
-      <header className="relative mb-10 overflow-hidden rounded-[2.25rem] border border-white/60 bg-white/65 px-6 py-8 text-center shadow-[0_24px_60px_-20px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:py-10">
+      <header className="relative mb-10 overflow-hidden rounded-[2.25rem] border border-border bg-card/65 px-6 py-8 text-center shadow-[0_24px_60px_-20px_rgba(61,61,92,0.18)] ring-1 ring-[color:var(--tots-ink)]/[0.04] backdrop-blur-xl md:py-10">
         <div className="pointer-events-none absolute -right-10 -top-10 size-44 rounded-full bg-[color:var(--tots-lavender)] opacity-70 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 -left-8 size-40 rounded-full bg-[color:var(--tots-mint)] opacity-70 blur-3xl" />
         <div className="relative mx-auto flex max-w-xl flex-col items-center gap-3">

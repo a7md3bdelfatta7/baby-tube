@@ -224,7 +224,7 @@ export function SettingsPanel(): ReactElement {
               return (
                 <li
                   key={category}
-                  className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/70 p-3 ring-1 ring-black/[0.04]"
+                  className="flex flex-wrap items-center gap-2 rounded-2xl bg-card/70 p-3 ring-1 ring-black/[0.04]"
                 >
                   {isEditing ? (
                     <Input
