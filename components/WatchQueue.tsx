@@ -75,7 +75,11 @@ function QueueRow({
       <div
         className="relative h-[3.6rem] w-[6rem] shrink-0 overflow-hidden rounded-xl ring-1 ring-black/[0.05]"
         style={{
-          background: `linear-gradient(135deg, ${accent}, color-mix(in oklch, ${accent} 50%, white))`,
+          // Solid fallback for browsers without color-mix() support (many
+          // Samsung/Tizen and other TV browsers) — backgroundImage only
+          // overrides this when the gradient actually parses.
+          backgroundColor: accent,
+          backgroundImage: `linear-gradient(135deg, ${accent}, color-mix(in oklch, ${accent} 50%, white))`,
         }}
       >
         {thumb ? (

@@ -310,7 +310,11 @@ export default function WatchPage({
           <div
             className="relative overflow-hidden rounded-[2rem] border-2 border-border p-2 shadow-[0_30px_70px_-20px_rgba(80,90,160,0.45)] ring-1 ring-black/[0.04] backdrop-blur md:p-3"
             style={{
-              background: `linear-gradient(135deg, color-mix(in oklch, ${tone} 70%, var(--card)), var(--card))`,
+              // Solid fallback for browsers without color-mix() support (many
+              // Samsung/Tizen and other TV browsers) — backgroundImage only
+              // overrides this when the gradient actually parses.
+              backgroundColor: tone,
+              backgroundImage: `linear-gradient(135deg, color-mix(in oklch, ${tone} 70%, var(--card)), var(--card))`,
             }}
           >
             {/* corner stickers */}

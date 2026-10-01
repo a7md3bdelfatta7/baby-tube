@@ -457,8 +457,11 @@ function VideoCard({
         <div
           className="relative aspect-video overflow-hidden rounded-[1.1rem]"
           style={{
-            backgroundColor: "var(--pastel-blue)",
-            background: `linear-gradient(135deg, ${tone.bg}, color-mix(in oklch, ${tone.bg} 60%, white))`,
+            // Solid fallback for browsers without color-mix() support (many
+            // Samsung/Tizen and other TV browsers) — backgroundImage only
+            // overrides this when the gradient actually parses.
+            backgroundColor: tone.bg,
+            backgroundImage: `linear-gradient(135deg, ${tone.bg}, color-mix(in oklch, ${tone.bg} 60%, white))`,
           }}
         >
           {thumb ? (

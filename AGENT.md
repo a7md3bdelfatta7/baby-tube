@@ -81,6 +81,9 @@ pnpm run dev
 - `app/api/videos/[id]/route.ts`: get, update, and delete one video.
 - `app/api/videos/import-playlist/route.ts`: server-side playlist import. It has `maxDuration = 60` for Vercel.
 - `app/api/queue/route.ts`: public queue read and admin-only queue update for the ordered watch queue.
+- `lib/theme-store.ts`: light/dark theme state (`auto`/`light`/`dark`). `auto` resolves from local clock hours (7am–7pm = light), rechecked every 60s and on focus/visibility.
+- `components/ThemeToggle.tsx`: header control that cycles the theme mode.
+- `components/AppBackdrop.tsx`: decorative orbs/clouds/stars behind the page; hidden entirely on TV via `.reduce-fx .app-backdrop`.
 
 ## Data Model
 
@@ -160,6 +163,52 @@ Production is intended for Vercel with Neon Postgres:
 - Use a Neon pooled connection string for `DATABASE_URL`.
 - Apply schema changes deliberately before or during deployment.
 - `pnpm run deploy:vercel` runs `vercel deploy --prod`.
+
+## TV Browser Support (Samsung Tizen / Smart TV)
+
+**This app is used mainly on TV browsers** (Samsung Tizen, LG webOS, and similar embedded
+set-top browsers), not primarily desktop/mobile. Those browsers typically run old,
+locked-down Chromium forks (commonly Chromium ~47–94 depending on Tizen/webOS version) with
+weak GPUs. Treat TV as the primary target when touching anything visual, and verify changes
+against both mechanisms below, not just a desktop Chrome preview.
+
+**Two independent systems are both driven by classes on `<html>`, and TV devices hit both at
+once (a dark-mode TV at night is the overlap of the two):**
+
+1. **`.reduce-fx` — TV performance mode.** Detected via UA sniffing (`isTvUserAgent` in
+   `lib/utils.ts`, applied via the `REDUCE_FX_BOOTSTRAP` inline script in `app/layout.tsx`
+   before first paint) and gated in `app/globals.css`. It strips `backdrop-filter` and all
+   `animation`/`transition` globally (weak TV GPUs choke on blur and continuous repaints),
+   hides the decorative `AppBackdrop` outright, and replaces the body's blurred-orb background
+   with a cheap flat-gradient equivalent.
+2. **`.dark` — theme mode.** Driven by `lib/theme-store.ts` + the `THEME_BOOTSTRAP` inline
+   script in `app/layout.tsx` (same before-first-paint pattern as `REDUCE_FX_BOOTSTRAP`), with
+   `auto` mode resolving from local clock hours.
+
+**Hard-won lessons (both bugs shipped once already — don't reintroduce them):**
+
+- **Every TV-only (`.reduce-fx`) rule that sets a color/background must itself be
+  theme-aware.** It is easy to hardcode a single "looks fine" color in a `.reduce-fx` override
+  and forget it needs a light *and* dark variant — that silently defeats dark mode on TV only
+  (desktop/mobile look fine, so it's easy to miss in review). Route such values through CSS
+  variables with both a `:root` and `.dark` definition (see `--reduce-fx-gradient`, the
+  TV-safe counterpart to `--body-gradient`, used by `.reduce-fx body` in `app/globals.css`)
+  rather than writing literal colors inside a `.reduce-fx` selector.
+- **Never rely on `color-mix()` without a fallback.** It's a 2023-era CSS feature; most
+  Tizen/webOS embedded Chromium builds predate it, and an unsupported value drops the *entire*
+  declaration (not just that function), which can make a background vanish completely (this
+  broke the watch-timer progress bar once). When using `color-mix()` in a dynamic/inline
+  `style`, always set a plain solid `backgroundColor` first and put the `color-mix()` gradient
+  in `backgroundImage` (not the `background` shorthand) — unsupported browsers then keep the
+  solid color instead of losing the background entirely. In plain CSS gradients (not dynamic
+  per-item colors), prefer just avoiding `color-mix()` altogether (two solid color stops is
+  usually visually equivalent and has zero risk).
+- Avoid introducing new `backdrop-filter`/`filter: blur()` usage that isn't already covered by
+  `.reduce-fx` stripping it, and avoid new continuous CSS animations without checking they're
+  also killed by `.reduce-fx` (`animation: none !important` already covers standard
+  `animation`, but double-check anything driven by `requestAnimationFrame`/JS instead of CSS).
+- When testing locally, you can simulate TV mode without real hardware: open devtools and run
+  `document.documentElement.classList.add('reduce-fx')` (and `'dark'` to test the overlap).
 
 ## Gotchas
 

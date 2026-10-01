@@ -82,6 +82,37 @@ iframe {
         #e5f4fc
       );
 
+    /* Cheap, no-blur equivalent of --body-gradient for TV browsers (see
+       .reduce-fx body below) — plain radial gradients instead of blurred
+       orbs, so it still needs a light/dark variant of its own. */
+    --reduce-fx-gradient:
+      radial-gradient(
+        55% 45% at 12% 8%,
+        rgba(200, 239, 212, 0.8),
+        transparent 70%
+      ),
+      radial-gradient(
+        45% 40% at 92% 14%,
+        rgba(216, 199, 240, 0.7),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 45% at 18% 88%,
+        rgba(255, 212, 186, 0.72),
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 38% at 85% 82%,
+        rgba(168, 213, 242, 0.68),
+        transparent 70%
+      ),
+      linear-gradient(
+        170deg,
+        #eefbf2,
+        #fffbe9 50%,
+        #eaf6fd
+      );
+
     /* Decorative pastel categories — used across cards/skeletons */
     --pastel-mint:     var(--tots-mint);
     --pastel-sky:      var(--tots-sky);
@@ -149,6 +180,36 @@ iframe {
         ellipse 90% 60% at 0% 70%,
         rgba(110, 85, 90, 0.35),
         transparent 60%
+      ),
+      linear-gradient(
+        170deg,
+        #17172a,
+        #1c1c30 50%,
+        #191927
+      );
+
+    /* Cheap, no-blur equivalent of --body-gradient for TV browsers (see
+       .reduce-fx body below). */
+    --reduce-fx-gradient:
+      radial-gradient(
+        55% 45% at 12% 8%,
+        rgba(80, 100, 130, 0.5),
+        transparent 70%
+      ),
+      radial-gradient(
+        45% 40% at 92% 14%,
+        rgba(90, 75, 130, 0.45),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 45% at 18% 88%,
+        rgba(110, 85, 90, 0.4),
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 38% at 85% 82%,
+        rgba(70, 90, 115, 0.4),
+        transparent 70%
       ),
       linear-gradient(
         170deg,
@@ -256,34 +317,12 @@ iframe {
      gradients instead of blurred elements. Radial gradients are painted once
      and cost the GPU almost nothing, unlike filter: blur() or backdrop-filter.
      We also drop background-attachment: fixed, which forces a full-viewport
-     repaint on every scroll. */
-  background-image:
-    radial-gradient(
-      55% 45% at 12% 8%,
-      rgba(200, 239, 212, 0.8),
-      transparent 70%
-    ),
-    radial-gradient(
-      45% 40% at 92% 14%,
-      rgba(216, 199, 240, 0.7),
-      transparent 70%
-    ),
-    radial-gradient(
-      50% 45% at 18% 88%,
-      rgba(255, 212, 186, 0.72),
-      transparent 70%
-    ),
-    radial-gradient(
-      40% 38% at 85% 82%,
-      rgba(168, 213, 242, 0.68),
-      transparent 70%
-    ),
-    linear-gradient(
-      170deg,
-      #eefbf2,
-      #fffbe9 50%,
-      #eaf6fd
-    );
+     repaint on every scroll.
+     IMPORTANT: this used to hardcode the light-mode colors directly, which
+     silently defeated dark mode on every TV browser (reduce-fx always wins
+     here) — it must stay driven by --reduce-fx-gradient so it flips with
+     .dark like --body-gradient does everywhere else. */
+  background-image: var(--reduce-fx-gradient);
   background-attachment: scroll;
   background-repeat: no-repeat;
   background-size: cover;

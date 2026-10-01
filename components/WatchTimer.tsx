@@ -65,8 +65,10 @@ function useTimerViewModel(): TimerViewModel | null {
   const remainingRatio = Math.max(0, Math.min(1, remaining / totalSeconds));
 
   let state: TimerVisualState = {
-    gradient:
-      "linear-gradient(90deg, var(--tots-mint), color-mix(in srgb, var(--tots-mint) 50%, var(--tots-sunshine)))",
+    // Plain two-stop gradient (no color-mix()) — Samsung/Tizen and other
+    // TV browsers often lack color-mix() support, which drops the whole
+    // declaration and leaves the progress bar invisible.
+    gradient: "linear-gradient(90deg, var(--tots-mint), var(--tots-sunshine))",
     chip: "bg-[color:var(--tots-mint)] text-[color:var(--tots-ink)]",
     label: "Screen time left",
     Icon: Sun,
