@@ -61,9 +61,11 @@ function nextClipValue(value: string, delta: number): string {
 export function VideoFormFields({
   state,
   setState,
+  existingVideoIds,
 }: {
   state: VideoFormState;
   setState: (next: VideoFormState) => void;
+  existingVideoIds?: ReadonlySet<string>;
 }): ReactElement {
   const set =
     (key: keyof VideoFormState) =>
@@ -74,6 +76,7 @@ export function VideoFormFields({
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <div className="md:col-span-2">
         <YoutubeSearchPicker
+          existingVideoIds={existingVideoIds}
           onSelect={(result) =>
             setState({
               ...state,

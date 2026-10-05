@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Check, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { searchYoutubeVideos } from "@/lib/api";
 import type { YTSearchResult } from "@/lib/youtube";
@@ -13,8 +13,10 @@ const DEBOUNCE_MS = 400;
 
 export function YoutubeSearchPicker({
   onSelect,
+  existingVideoIds,
 }: {
   onSelect: (result: YTSearchResult) => void;
+  existingVideoIds?: ReadonlySet<string>;
 }): ReactElement {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<YTSearchResult[]>([]);
@@ -92,39 +94,50 @@ export function YoutubeSearchPicker({
             <p className="p-3 text-sm text-muted-foreground">No results</p>
           )}
           {!error &&
-            results.map((result) => (
-              <button
-                key={result.videoId}
-                type="button"
-                className={cn(
-                  "flex w-full items-center gap-3 p-2 text-left hover:bg-accent",
-                )}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  onSelect(result);
-                  setQuery("");
-                  setResults([]);
-                  setOpen(false);
-                }}
-              >
-                {result.thumbnailUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={result.thumbnailUrl}
-                    alt=""
-                    className="h-12 w-20 shrink-0 rounded-md object-cover"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {result.title}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {result.channelTitle}
-                  </p>
-                </div>
-              </button>
-            ))}
+            results.map((result) => {
+              const alreadyAdded = existingVideoIds?.has(result.videoId);
+
+              return (
+                <button
+                  key={result.videoId}
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center gap-3 p-2 text-left hover:bg-accent",
+                    alreadyAdded && "opacity-50",
+                  )}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    onSelect(result);
+                    setQuery("");
+                    setResults([]);
+                    setOpen(false);
+                  }}
+                >
+                  {result.thumbnailUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={result.thumbnailUrl}
+                      alt=""
+                      className="h-12 w-20 shrink-0 rounded-md object-cover"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {result.title}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {result.channelTitle}
+                    </p>
+                  </div>
+                  {alreadyAdded && (
+                    <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                      <Check className="size-3.5" />
+                      Already added
+                    </span>
+                  )}
+                </button>
+              );
+            })}
         </div>
       )}
     </div>

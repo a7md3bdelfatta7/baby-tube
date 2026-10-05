@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { createVideo } from "@/lib/api";
+import { createVideo, listVideos } from "@/lib/api";
+import { extractVideoId } from "@/lib/youtube";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,6 +36,19 @@ export function AddVideos(): ReactElement {
   const qc = useQueryClient();
   const [rows, setRows] = useState<AddVideoRow[]>([createBlankRow()]);
   const [submitting, setSubmitting] = useState(false);
+  const { data: existingVideos } = useQuery({
+    queryKey: ["videos"],
+    queryFn: listVideos,
+  });
+  const existingVideoIds = useMemo(
+    () =>
+      new Set(
+        (existingVideos ?? [])
+          .map((video) => extractVideoId(video.videoUrl))
+          .filter((id): id is string => id !== null),
+      ),
+    [existingVideos],
+  );
 
   const updateRow = (index: number, patch: Partial<AddVideoRow>): void =>
     setRows((items) =>
@@ -134,6 +148,7 @@ export function AddVideos(): ReactElement {
                 <VideoFormFields
                   state={row}
                   setState={(next) => updateRow(index, next)}
+                  existingVideoIds={existingVideoIds}
                 />
                 <div className="flex justify-end">
                   <Button
