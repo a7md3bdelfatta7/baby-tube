@@ -3,6 +3,7 @@
 import type { AppSettings, ChildProfile, Video } from "@/db/schema";
 import type { QueueState } from "@/lib/queue";
 import type { ProfilesState } from "@/lib/profiles";
+import type { YTSearchResult } from "@/lib/youtube";
 
 function adminHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -73,6 +74,18 @@ export async function importPlaylist(
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Import failed");
   return res.json();
+}
+
+export async function searchYoutubeVideos(
+  query: string,
+): Promise<YTSearchResult[]> {
+  const res = await fetch(
+    `/api/videos/search?q=${encodeURIComponent(query)}`,
+    { headers: adminHeaders() },
+  );
+  if (!res.ok) throw new Error((await res.json()).error ?? "Search failed");
+  const data = await res.json();
+  return data.results;
 }
 
 export async function getSettings(): Promise<AppSettings> {

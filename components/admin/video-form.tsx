@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useContentCategories } from "@/lib/use-content-categories";
 import { cn } from "@/lib/utils";
 import { fmtCategories } from "./shared";
+import { YoutubeSearchPicker } from "./youtube-search-picker";
 
 export type VideoFormState = {
   title: string;
@@ -71,6 +72,18 @@ export function VideoFormFields({
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="md:col-span-2">
+        <YoutubeSearchPicker
+          onSelect={(result) =>
+            setState({
+              ...state,
+              title: result.title,
+              videoUrl: `https://www.youtube.com/watch?v=${result.videoId}`,
+              thumbnailUrl: result.thumbnailUrl ?? state.thumbnailUrl,
+            })
+          }
+        />
+      </div>
       <Input placeholder="Title" value={state.title} onChange={set("title")} />
       <Input
         placeholder="YouTube URL"

@@ -5,6 +5,14 @@ export type YTPlaylistItem = {
   thumbnailUrl: string | null;
 };
 
+export type YTSearchResult = {
+  title: string;
+  description: string;
+  videoId: string;
+  thumbnailUrl: string | null;
+  channelTitle: string;
+};
+
 export function extractVideoId(url: string): string | null {
   if (!url) return null;
   const patterns = [
@@ -76,4 +84,44 @@ export async function fetchPlaylistItems(
   } while (pageToken);
 
   return items;
+}
+
+export async function searchVideos(
+  query: string,
+  apiKey: string,
+  maxResults = 8,
+): Promise<YTSearchResult[]> {
+  const url = new URL("https://www.googleapis.com/youtube/v3/search");
+  url.searchParams.set("part", "snippet");
+  url.searchParams.set("type", "video");
+  url.searchParams.set("maxResults", String(maxResults));
+  url.searchParams.set("q", query);
+  url.searchParams.set("key", apiKey);
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`YouTube API error ${res.status}: ${text}`);
+  }
+  const data = await res.json();
+
+  const results: YTSearchResult[] = [];
+  for (const it of data.items ?? []) {
+    const videoId = it.id?.videoId;
+    const snippet = it.snippet;
+    if (!videoId || !snippet) continue;
+    const thumb =
+      snippet.thumbnails?.medium?.url ??
+      snippet.thumbnails?.high?.url ??
+      snippet.thumbnails?.default?.url ??
+      thumbnailFor(videoId);
+    results.push({
+      title: snippet.title,
+      description: snippet.description ?? "",
+      videoId,
+      thumbnailUrl: thumb,
+      channelTitle: snippet.channelTitle ?? "",
+    });
+  }
+  return results;
 }
