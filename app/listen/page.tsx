@@ -85,14 +85,14 @@ export default function ListenPage(): ReactElement {
   return (
     <main
       className={cn(
-        "relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden",
-        "bg-gradient-to-br from-[color:var(--tots-lavender)] via-[color:var(--tots-sky)] to-[color:var(--tots-mint)]",
+        "relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-background",
+        "[background-image:var(--body-gradient)]",
       )}
     >
       <BackgroundBlobs />
 
       <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-end px-4 pt-4 md:px-6 md:pt-6">
-        <span className="rounded-full border-0 bg-white/70 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--tots-ink)] shadow-sm ring-1 ring-black/[0.04] backdrop-blur">
+        <span className="rounded-full border-0 bg-card/70 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-foreground shadow-sm ring-1 ring-black/[0.04] backdrop-blur">
           Listening mode
         </span>
       </header>
@@ -100,7 +100,7 @@ export default function ListenPage(): ReactElement {
       <section className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-8 text-center">
         <Visualizer isPlaying={isPlaying} />
 
-        <h1 className="mt-6 font-display text-2xl font-bold tracking-tight text-[color:var(--tots-ink)] md:text-3xl">
+        <h1 className="mt-6 font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
           {isLoading
             ? "Loading songs…"
             : songs.length === 0
@@ -123,7 +123,7 @@ export default function ListenPage(): ReactElement {
               size="icon-lg"
               disabled={!isReady}
               onClick={togglePlay}
-              className="size-14 rounded-full bg-white/95 text-[color:var(--tots-ink)] shadow-xl hover:bg-white"
+              className="size-14 rounded-full bg-card/95 text-foreground shadow-xl hover:bg-card"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
@@ -137,7 +137,7 @@ export default function ListenPage(): ReactElement {
               variant="secondary"
               size="icon-lg"
               onClick={advance}
-              className="size-14 rounded-full bg-[color:var(--tots-sunshine)] text-[color:var(--tots-ink)] shadow-xl hover:brightness-105"
+              className="size-14 rounded-full bg-accent text-accent-foreground shadow-xl hover:brightness-105"
               aria-label="Next song"
             >
               <SkipForward className="size-6 fill-current" aria-hidden />
