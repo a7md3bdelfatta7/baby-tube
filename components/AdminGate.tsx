@@ -120,7 +120,7 @@ export function AdminGate({
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 mt-6 flex flex-wrap items-center justify-between gap-3">
         <Button
           render={<Link href="/" />}
           variant="outline"

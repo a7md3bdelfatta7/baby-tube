@@ -40,6 +40,15 @@ export async function updateVideo(
   return res.json();
 }
 
+export async function reorderVideos(videoIds: number[]): Promise<void> {
+  const res = await fetch("/api/videos/order", {
+    method: "PUT",
+    headers: { "content-type": "application/json", ...adminHeaders() },
+    body: JSON.stringify({ videoIds }),
+  });
+  if (!res.ok) throw new Error("Failed to save order");
+}
+
 export async function deleteVideo(id: number): Promise<void> {
   const res = await fetch(`/api/videos/${id}`, {
     method: "DELETE",

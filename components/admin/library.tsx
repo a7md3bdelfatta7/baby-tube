@@ -8,6 +8,7 @@ import type { Video } from "@/db/schema";
 import {
   deleteVideo,
   listVideos,
+  reorderVideos,
   updateVideo,
 } from "@/lib/api";
 import { useContentCategories } from "@/lib/use-content-categories";
@@ -177,11 +178,7 @@ export function VideoList(): ReactElement {
   });
   const reorder = useMutation({
     mutationFn: async (nextVideos: Video[]) => {
-      await Promise.all(
-        nextVideos.map((video, index) =>
-          updateVideo(video.id, { position: index + 1 }),
-        ),
-      );
+      await reorderVideos(nextVideos.map((video) => video.id));
     },
     onMutate: async (nextVideos) => {
       await qc.cancelQueries({ queryKey: ["videos"] });

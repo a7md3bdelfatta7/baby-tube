@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { ChildProfile, WatchHistoryEntry } from "@/db/schema";
+import type { ChildProfile, Video, WatchHistoryEntry } from "@/db/schema";
 import { formatAge } from "@/lib/age";
 import { getProfiles, listVideos } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -11,32 +11,59 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { AdminCard, formatDuration } from "./shared";
 
+type Range = "today" | "7d" | "30d";
+
+const RANGE_DAYS: Record<Range, number> = { today: 1, "7d": 7, "30d": 30 };
+const RANGE_LABELS: Record<Range, string> = {
+  today: "Today",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+};
+
 type VideoInsight = {
   videoId: number;
   title: string;
   count: number;
 };
 
+type CategoryInsight = {
+  category: string;
+  count: number;
+};
+
+type TrendPoint = {
+  date: string;
+  label: string;
+  seconds: number;
+};
+
 type ProfileInsight = {
   profile: ChildProfile;
-  watchedToday: number;
-  completedToday: number;
-  skippedToday: number;
-  screenTimeSecondsToday: number;
+  watched: number;
+  completed: number;
+  skipped: number;
+  screenTimeSeconds: number;
+  avgDailySeconds: number;
+  daysUnderLimit: number;
+  daysTracked: number;
   lastWatched: WatchHistoryEntry | null;
   favorites: VideoInsight[];
   skippedVideos: VideoInsight[];
+  topCategories: CategoryInsight[];
+  trend: TrendPoint[];
 };
 
-function isToday(isoDate: string): boolean {
-  const value = new Date(isoDate);
-  const now = new Date();
+function startOfDay(date: Date): Date {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
 
-  return (
-    value.getFullYear() === now.getFullYear() &&
-    value.getMonth() === now.getMonth() &&
-    value.getDate() === now.getDate()
-  );
+function isWithinRange(isoDate: string, days: number): boolean {
+  const value = startOfDay(new Date(isoDate)).getTime();
+  const cutoff = startOfDay(new Date()).getTime() - (days - 1) * 86_400_000;
+
+  return value >= cutoff;
 }
 
 function formatWatchedAt(isoDate: string): string {
@@ -68,32 +95,93 @@ function collectVideoInsights(
     .slice(0, 3);
 }
 
-function buildProfileInsight(profile: ChildProfile): ProfileInsight {
-  const todayEntries = profile.watchHistory.filter((entry) =>
-    isToday(entry.watchedAt),
+function collectCategoryInsights(
+  entries: readonly WatchHistoryEntry[],
+  categoriesByVideoId: Map<number, string[]>,
+): CategoryInsight[] {
+  const counts = new Map<string, number>();
+
+  entries.forEach((entry) => {
+    const categories = categoriesByVideoId.get(entry.videoId) ?? [];
+    (categories.length > 0 ? categories : ["Uncategorized"]).forEach((category) => {
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category))
+    .slice(0, 3);
+}
+
+function buildTrend(entries: readonly WatchHistoryEntry[], days: number): TrendPoint[] {
+  const seconds = new Map<string, number>();
+
+  entries.forEach((entry) => {
+    const key = startOfDay(new Date(entry.watchedAt)).toISOString().slice(0, 10);
+    seconds.set(key, (seconds.get(key) ?? 0) + entry.watchedSeconds);
+  });
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = startOfDay(new Date());
+    date.setDate(date.getDate() - (days - 1 - index));
+    const key = date.toISOString().slice(0, 10);
+
+    return {
+      date: key,
+      label: date.toLocaleDateString([], { weekday: "short", day: "numeric" }),
+      seconds: seconds.get(key) ?? 0,
+    };
+  });
+}
+
+function buildProfileInsight(
+  profile: ChildProfile,
+  range: Range,
+  categoriesByVideoId: Map<number, string[]>,
+): ProfileInsight {
+  const days = RANGE_DAYS[range];
+  const rangeEntries = profile.watchHistory.filter((entry) =>
+    isWithinRange(entry.watchedAt, days),
   );
+  const dailyLimitSeconds = profile.screenTimeMinutes * 60;
+  const trend = buildTrend(profile.watchHistory, Math.max(days, 7));
+  const trackedDays = trend.filter((point) => point.seconds > 0);
+  const daysUnderLimit = trackedDays.filter(
+    (point) => dailyLimitSeconds === 0 || point.seconds <= dailyLimitSeconds,
+  ).length;
 
   return {
     profile,
-    watchedToday: todayEntries.length,
-    completedToday: todayEntries.filter((entry) => entry.status === "completed")
-      .length,
-    skippedToday: todayEntries.filter((entry) => entry.status === "skipped")
-      .length,
-    screenTimeSecondsToday: todayEntries.reduce(
+    watched: rangeEntries.length,
+    completed: rangeEntries.filter((entry) => entry.status === "completed").length,
+    skipped: rangeEntries.filter((entry) => entry.status === "skipped").length,
+    screenTimeSeconds: rangeEntries.reduce(
       (total, entry) => total + entry.watchedSeconds,
       0,
     ),
+    avgDailySeconds:
+      trackedDays.length > 0
+        ? Math.round(
+            trackedDays.reduce((total, point) => total + point.seconds, 0) /
+              trackedDays.length,
+          )
+        : 0,
+    daysUnderLimit,
+    daysTracked: trackedDays.length,
     lastWatched: profile.watchHistory[0] ?? null,
-    favorites: collectVideoInsights(profile.watchHistory),
+    favorites: collectVideoInsights(rangeEntries),
     skippedVideos: collectVideoInsights(
-      profile.watchHistory,
+      rangeEntries,
       (entry) => entry.status === "skipped",
     ),
+    topCategories: collectCategoryInsights(rangeEntries, categoriesByVideoId),
+    trend,
   };
 }
 
 export function ParentDashboard(): ReactElement {
+  const [range, setRange] = useState<Range>("today");
   const { data: profilesState, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: getProfiles,
@@ -103,9 +191,13 @@ export function ParentDashboard(): ReactElement {
     queryFn: listVideos,
   });
   const profiles = profilesState?.childProfiles ?? [];
+  const categoriesByVideoId = useMemo(
+    () => new Map((videos ?? []).map((video: Video) => [video.id, video.categories])),
+    [videos],
+  );
   const profileInsights = useMemo(
-    () => profiles.map(buildProfileInsight),
-    [profiles],
+    () => profiles.map((profile) => buildProfileInsight(profile, range, categoriesByVideoId)),
+    [profiles, range, categoriesByVideoId],
   );
   const allHistory = useMemo(
     () =>
@@ -117,20 +209,25 @@ export function ParentDashboard(): ReactElement {
         ),
     [profiles],
   );
-  const todaysHistory = useMemo(
-    () => allHistory.filter((entry) => isToday(entry.watchedAt)),
-    [allHistory],
+  const rangeHistory = useMemo(
+    () => allHistory.filter((entry) => isWithinRange(entry.watchedAt, RANGE_DAYS[range])),
+    [allHistory, range],
   );
-  const screenTimeToday = todaysHistory.reduce(
+  const screenTimeInRange = rangeHistory.reduce(
     (total, entry) => total + entry.watchedSeconds,
     0,
   );
-  const favoriteVideos = collectVideoInsights(allHistory);
+  const favoriteVideos = collectVideoInsights(rangeHistory);
   const skippedVideos = collectVideoInsights(
-    allHistory,
+    rangeHistory,
     (entry) => entry.status === "skipped",
   );
+  const topCategories = collectCategoryInsights(rangeHistory, categoriesByVideoId);
   const lastWatched = allHistory[0] ?? null;
+  const watchedVideoIds = new Set(allHistory.map((entry) => entry.videoId));
+  const libraryCoverage = videos?.length
+    ? Math.round((watchedVideoIds.size / videos.length) * 100)
+    : 0;
   const isLoading = profilesLoading || videosLoading;
 
   if (isLoading) {
@@ -151,32 +248,40 @@ export function ParentDashboard(): ReactElement {
             <div>
               <CardTitle>Parent dashboard</CardTitle>
               <CardDescription>
-                Lightweight watch insights for today and recent family patterns.
+                Watch insights for {RANGE_LABELS[range].toLowerCase()}.
               </CardDescription>
             </div>
-            <Badge variant="secondary" className="rounded-full">
-              {videos?.length ?? 0} library videos
-            </Badge>
+            <div className="flex items-center gap-2">
+              <RangeToggle range={range} onChange={setRange} />
+              <Badge variant="secondary" className="rounded-full">
+                {videos?.length ?? 0} library videos
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <InsightCard label="Watched today" value={String(todaysHistory.length)} />
+          <InsightCard label="Watched" value={String(rangeHistory.length)} />
           <InsightCard
             label="Screen time used"
-            value={formatDuration(screenTimeToday)}
+            value={formatDuration(screenTimeInRange)}
           />
           <InsightCard
-            label="Skipped today"
+            label="Skipped"
             value={String(
-              todaysHistory.filter((entry) => entry.status === "skipped").length,
+              rangeHistory.filter((entry) => entry.status === "skipped").length,
             )}
           />
           <InsightCard
-            label="Last watched"
-            value={lastWatched ? lastWatched.title : "No history yet"}
-            detail={lastWatched ? formatWatchedAt(lastWatched.watchedAt) : undefined}
+            label="Library watched"
+            value={`${libraryCoverage}%`}
+            detail={`${watchedVideoIds.size} of ${videos?.length ?? 0} videos`}
           />
         </CardContent>
+        {topCategories.length > 0 ? (
+          <CardContent className="pt-0">
+            <VideoInsightList title="Top categories" items={topCategories} compact />
+          </CardContent>
+        ) : null}
       </AdminCard>
 
       {profiles.length === 0 ? (
@@ -203,6 +308,34 @@ export function ParentDashboard(): ReactElement {
   );
 }
 
+function RangeToggle({
+  range,
+  onChange,
+}: {
+  range: Range;
+  onChange: (range: Range) => void;
+}): ReactElement {
+  return (
+    <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1">
+      {(Object.keys(RANGE_LABELS) as Range[]).map((value) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onChange(value)}
+          className={cn(
+            "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+            value === range
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {value === "today" ? "Today" : value}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function InsightCard({
   label,
   value,
@@ -225,15 +358,53 @@ function InsightCard({
   );
 }
 
+function TrendChart({ trend }: { trend: TrendPoint[] }): ReactElement {
+  const max = Math.max(...trend.map((point) => point.seconds), 1);
+
+  return (
+    <div className="rounded-2xl bg-muted/40 p-4">
+      <p className="text-sm font-medium">Screen time trend</p>
+      <div className="mt-3 flex items-stretch gap-1.5" style={{ height: "4.5rem" }}>
+        {trend.map((point) => (
+          <div
+            key={point.date}
+            className="flex min-w-0 flex-1 flex-col items-center gap-1"
+            title={`${point.label}: ${formatDuration(point.seconds)}`}
+          >
+            <div className="flex h-full w-full items-end">
+              <div
+                className="w-full rounded-t-md"
+                style={{
+                  height: `${Math.max((point.seconds / max) * 100, point.seconds > 0 ? 6 : 0)}%`,
+                  backgroundColor: "var(--tots-ink)",
+                  opacity: 0.7,
+                }}
+              />
+            </div>
+            <span className="text-[0.6rem] text-muted-foreground">
+              {point.label.split(" ")[0]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProfileInsightCard({ insight }: { insight: ProfileInsight }): ReactElement {
   const dailyLimitSeconds = insight.profile.screenTimeMinutes * 60;
   const screenTimePercent =
     dailyLimitSeconds > 0
-      ? Math.min(
-          100,
-          Math.round((insight.screenTimeSecondsToday / dailyLimitSeconds) * 100),
-        )
+      ? Math.min(100, Math.round((insight.screenTimeSeconds / dailyLimitSeconds) * 100))
       : 0;
+  const completionRate =
+    insight.completed + insight.skipped > 0
+      ? Math.round((insight.completed / (insight.completed + insight.skipped)) * 100)
+      : null;
+  const adherencePercent =
+    insight.daysTracked > 0
+      ? Math.round((insight.daysUnderLimit / insight.daysTracked) * 100)
+      : null;
 
   return (
     <AdminCard>
@@ -247,26 +418,31 @@ function ProfileInsightCard({ insight }: { insight: ProfileInsight }): ReactElem
             </CardDescription>
           </div>
           <Badge variant="secondary" className="rounded-full">
-            {insight.watchedToday} watched today
+            {insight.watched} watched
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <InsightCard
             label="Screen time"
-            value={formatDuration(insight.screenTimeSecondsToday)}
+            value={formatDuration(insight.screenTimeSeconds)}
             detail={`${screenTimePercent}% of limit`}
           />
           <InsightCard
-            label="Completed"
-            value={String(insight.completedToday)}
-            detail="today"
+            label="Avg per day"
+            value={formatDuration(insight.avgDailySeconds)}
+            detail={`${insight.daysTracked} active day${insight.daysTracked === 1 ? "" : "s"}`}
           />
           <InsightCard
-            label="Skipped"
-            value={String(insight.skippedToday)}
-            detail="today"
+            label="Completion rate"
+            value={completionRate !== null ? `${completionRate}%` : "—"}
+            detail={`${insight.completed} completed / ${insight.skipped} skipped`}
+          />
+          <InsightCard
+            label="Under limit"
+            value={adherencePercent !== null ? `${adherencePercent}%` : "—"}
+            detail="of active days"
           />
         </div>
 
@@ -277,7 +453,9 @@ function ProfileInsightCard({ insight }: { insight: ProfileInsight }): ReactElem
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <TrendChart trend={insight.trend} />
+
+        <div className="grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl bg-muted/40 p-4">
             <p className="text-sm font-medium">Last watched</p>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -290,6 +468,7 @@ function ProfileInsightCard({ insight }: { insight: ProfileInsight }): ReactElem
           </div>
           <VideoInsightList title="Favorites" items={insight.favorites} compact />
           <VideoInsightList title="Skipped videos" items={insight.skippedVideos} compact />
+          <VideoInsightList title="Top categories" items={insight.topCategories} compact />
         </div>
       </CardContent>
     </AdminCard>
@@ -302,7 +481,7 @@ function VideoInsightList({
   compact = false,
 }: {
   title: string;
-  items: VideoInsight[];
+  items: (VideoInsight | CategoryInsight)[];
   compact?: boolean;
 }): ReactElement {
   return (
@@ -310,21 +489,26 @@ function VideoInsightList({
       <p className="text-sm font-semibold">{title}</p>
       {items.length > 0 ? (
         <ol className="mt-3 space-y-2">
-          {items.map((item) => (
-            <li key={item.videoId} className="flex items-start justify-between gap-3">
-              <span
-                className={cn(
-                  "min-w-0 text-sm text-muted-foreground",
-                  compact ? "line-clamp-2" : "line-clamp-3",
-                )}
-              >
-                {item.title}
-              </span>
-              <Badge variant="secondary" className="shrink-0 rounded-full">
-                {item.count}x
-              </Badge>
-            </li>
-          ))}
+          {items.map((item) => {
+            const key = "videoId" in item ? item.videoId : item.category;
+            const label = "title" in item ? item.title : item.category;
+
+            return (
+              <li key={key} className="flex items-start justify-between gap-3">
+                <span
+                  className={cn(
+                    "min-w-0 text-sm text-muted-foreground",
+                    compact ? "line-clamp-2" : "line-clamp-3",
+                  )}
+                >
+                  {label}
+                </span>
+                <Badge variant="secondary" className="shrink-0 rounded-full">
+                  {item.count}x
+                </Badge>
+              </li>
+            );
+          })}
         </ol>
       ) : (
         <p className="mt-3 text-sm text-muted-foreground">No data yet.</p>

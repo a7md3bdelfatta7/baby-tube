@@ -157,6 +157,16 @@ export const queueInput = z.object({
     .transform((ids) => Array.from(new Set(ids))),
 });
 
+export const videoOrderInput = z.object({
+  videoIds: z
+    .array(z.number().int().positive())
+    .min(1)
+    .max(5000)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: "Duplicate video ids",
+    }),
+});
+
 export type SettingsInput = z.infer<typeof settingsInput>;
 export type QueueInput = z.infer<typeof queueInput>;
 export type WatchHistoryInput = z.infer<typeof watchHistoryInput>;
